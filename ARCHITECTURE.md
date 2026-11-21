@@ -106,8 +106,9 @@ port-manager/
 
 - Only `core:default` permissions are granted; no shell, filesystem or opener plugins.
 - No command accepts or executes shell input from the frontend.
-- A strict Content Security Policy is set in `tauri.conf.json` (self-hosted scripts only, IPC
-  connections only).
+- A strict Content Security Policy is set in `tauri.conf.json`: scripts and styles only from the
+  app itself, IPC connections only, no inline styles. `devCsp` adds `'unsafe-inline'` for
+  styles because Vite injects `<style>` tags during development; the production build has none.
 - The app never requests elevation. Operations that fail for lack of privileges will report
   that to the user instead.
 
