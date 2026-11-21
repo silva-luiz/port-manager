@@ -5,6 +5,8 @@ import { RefreshButton } from "../../components/RefreshButton";
 import type { FavoritesState } from "../../hooks/useFavorites";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
 import { useI18n } from "../../i18n/I18nProvider";
+import { ensureNotificationPermission } from "../../lib/notifications";
+import { useSettings } from "../../settings/SettingsProvider";
 import { parsePort } from "../ports/portQuery";
 import { favoriteUsage, type PortOwner } from "./favoriteUsage";
 
@@ -65,6 +67,8 @@ export function FavoritesPage({ favorites, ports }: FavoritesPageProps) {
         <RefreshButton onClick={() => void ports.refresh()} busy={ports.loading} label={t.favorites.refreshStatus} />
       </div>
 
+      <AlertsToggle />
+
       {favorites.error && (
         <Notice onDismiss={favorites.clearError}>{t.favorites.updateError(describeError(favorites.error))}</Notice>
       )}
@@ -96,6 +100,45 @@ export function FavoritesPage({ favorites, ports }: FavoritesPageProps) {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+/** Opt-in system notifications when a favorite port becomes busy or free. */
+function AlertsToggle() {
+  const { t, describeError } = useI18n();
+  const { settings, setFavoriteAlerts } = useSettings();
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const toggle = async (enabled: boolean) => {
+    setProblem(null);
+    if (enabled && !(await ensureNotificationPermission().catch(() => false))) {
+      setProblem(t.favorites.alertsBlocked);
+      return;
+    }
+    const error = await setFavoriteAlerts(enabled);
+    if (error) setProblem(t.favorites.alertsSaveError(describeError(error)));
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line bg-surface px-4 py-3">
+        <input
+          type="checkbox"
+          checked={settings.favoriteAlerts}
+          onChange={(e) => void toggle(e.target.checked)}
+          className="mt-1 accent-accent"
+        />
+        <span className="flex flex-col gap-0.5">
+          <span>{t.favorites.alertsToggle}</span>
+          <span className="text-xs text-muted">{t.favorites.alertsHint}</span>
+        </span>
+      </label>
+      {problem && (
+        <Notice tone="warn" onDismiss={() => setProblem(null)}>
+          {problem}
+        </Notice>
       )}
     </div>
   );

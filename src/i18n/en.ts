@@ -166,6 +166,18 @@ export const en = {
     free: "Free",
     noSockets: "No sockets on this port",
     unknownProcess: "Unknown process",
+    alertsToggle: "Notify me when these ports become busy or free",
+    alertsHint: "Checked every few seconds, even while Port Manager is minimized.",
+    alertsBlocked:
+      "Windows is blocking notifications from Port Manager. Allow them under Settings › System › Notifications.",
+    alertsSaveError: (error: string) => `Couldn't change notifications: ${error}`,
+  },
+  notifications: {
+    busyTitle: (port: number) => `Port ${port} is now in use`,
+    busyBody: (name: string, pid: number) => `${name} (PID ${pid}) started using it.`,
+    busyBodyUnknown: "A process started using it.",
+    freeTitle: (port: number) => `Port ${port} is now free`,
+    freeBody: "No process is using it anymore.",
   },
   settings: {
     languageTitle: "Language",

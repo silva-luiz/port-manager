@@ -108,7 +108,9 @@ port-manager/
 
 ## Security posture
 
-- Only `core:default` permissions are granted; no shell, filesystem or opener plugins.
+- Granted permissions: `core:default` plus three notification commands
+  (`is-permission-granted`, `request-permission`, `notify`), not the plugin's broader default
+  set. No shell, filesystem or opener plugins.
 - No command accepts or executes shell input from the frontend.
 - A strict Content Security Policy is set in `tauri.conf.json`: scripts and styles only from the
   app itself, IPC connections only, no inline styles. `devCsp` adds `'unsafe-inline'` for
@@ -152,7 +154,7 @@ port-manager/
 - Migrations are the `MIGRATIONS` list in `storage.rs`, tracked with `PRAGMA user_version`.
   Each runs in its own transaction. Append new migrations; never edit existing ones.
 - `settings` table: `key`/`value` text pairs behind the typed API in `settings.rs`
-  (`language`, `auto_refresh_seconds`). Invalid stored values fall back to defaults; invalid
+  (`language`, `auto_refresh_seconds`, `favorite_alerts`). Invalid stored values fall back to defaults; invalid
   new values are rejected with `invalidSetting`. The backend also returns the allowed refresh
   intervals so the UI doesn't hard-code them.
 - On the frontend, `SettingsProvider` loads settings once before the first render, applies
@@ -163,6 +165,20 @@ port-manager/
 - The Favorites view joins favorites with the current port snapshot on the frontend
   (`favoriteUsage.ts`); "in use" uses the same rule as the dashboard (any socket that is not
   TIME_WAIT/CLOSED).
+
+## Favorite port alerts
+
+- `watcher.rs` runs one background thread started in `setup`. Every 3 s, and only while the
+  `favorite_alerts` setting is on and there are favorites, it reads the TCP table (no process
+  names), computes in-use status per favorite port with the same `is_live` rule, and compares
+  it with the previous tick. Process names are looked up only for ports that changed.
+- The first tick after enabling records a baseline, so turning alerts on never fires for the
+  current state; newly added favorites are also baseline-only on their first tick.
+- Changes are emitted as the `favorite-port-changed` event. The frontend
+  (`useFavoriteAlerts`) formats them in the current language (`favoriteAlerts.ts`), shows a
+  Windows notification via `tauri-plugin-notification`, and quietly refreshes the views.
+- It runs in Rust rather than on a frontend timer because the frontend refresh pauses while
+  the window is hidden, which is exactly when alerts matter most.
 
 ## Window state
 

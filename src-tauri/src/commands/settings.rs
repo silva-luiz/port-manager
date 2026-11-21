@@ -24,3 +24,11 @@ pub async fn set_language(
 pub async fn set_auto_refresh(db: State<'_, Database>, seconds: u32) -> Result<Settings, AppError> {
     settings::set_auto_refresh(&db, seconds)
 }
+
+#[tauri::command]
+pub async fn set_favorite_alerts(
+    db: State<'_, Database>,
+    enabled: bool,
+) -> Result<Settings, AppError> {
+    settings::set_favorite_alerts(&db, enabled)
+}

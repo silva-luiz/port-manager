@@ -22,7 +22,9 @@ Early development. What works today:
   elevated.
 - Favorite ports, saved locally in SQLite: star a port from the table or details panel, or
   add one by number on the Favorites page, which shows whether each one is in use and by
-  which process.
+  which process. Optionally, get a Windows notification when a favorite port becomes busy or
+  free, even while the app is minimized.
+- One-click copy of PID, port, addresses, executable path and command line.
 - **Settings** (gear icon at the bottom of the left rail): English or Brazilian Portuguese
   interface, and automatic refresh (off, or every 2–30 seconds). Choices are remembered.
 - Backend health check.

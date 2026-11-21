@@ -10,6 +10,7 @@ use crate::storage::Database;
 
 const LANGUAGE_KEY: &str = "language";
 const AUTO_REFRESH_KEY: &str = "auto_refresh_seconds";
+const FAVORITE_ALERTS_KEY: &str = "favorite_alerts";
 
 /// Allowed automatic refresh intervals in seconds; 0 means off (the default).
 pub const AUTO_REFRESH_OPTIONS: &[u32] = &[0, 2, 5, 10, 30];
@@ -48,6 +49,8 @@ pub struct Settings {
     pub auto_refresh_seconds: u32,
     /// The values `auto_refresh_seconds` may take, so the UI doesn't hard-code them.
     pub auto_refresh_options: &'static [u32],
+    /// Notify when a favorite port becomes busy or free. Off by default.
+    pub favorite_alerts: bool,
 }
 
 pub fn get(db: &Database) -> Result<Settings, AppError> {
@@ -68,6 +71,7 @@ pub fn get(db: &Database) -> Result<Settings, AppError> {
             .filter(|s| AUTO_REFRESH_OPTIONS.contains(s))
             .unwrap_or(0),
         auto_refresh_options: AUTO_REFRESH_OPTIONS,
+        favorite_alerts: stored.get(FAVORITE_ALERTS_KEY).is_some_and(|v| v == "true"),
     })
 }
 
@@ -84,6 +88,15 @@ pub fn set_auto_refresh(db: &Database, seconds: u32) -> Result<Settings, AppErro
         });
     }
     put(db, AUTO_REFRESH_KEY, &seconds.to_string())?;
+    get(db)
+}
+
+pub fn set_favorite_alerts(db: &Database, enabled: bool) -> Result<Settings, AppError> {
+    put(
+        db,
+        FAVORITE_ALERTS_KEY,
+        if enabled { "true" } else { "false" },
+    )?;
     get(db)
 }
 
@@ -109,6 +122,15 @@ mod tests {
         assert_eq!(s.language, Language::En);
         assert_eq!(s.auto_refresh_seconds, 0);
         assert_eq!(s.auto_refresh_options, AUTO_REFRESH_OPTIONS);
+        assert!(!s.favorite_alerts);
+    }
+
+    #[test]
+    fn persists_favorite_alerts() {
+        let db = Database::open_in_memory().unwrap();
+        assert!(set_favorite_alerts(&db, true).unwrap().favorite_alerts);
+        assert!(get(&db).unwrap().favorite_alerts);
+        assert!(!set_favorite_alerts(&db, false).unwrap().favorite_alerts);
     }
 
     #[test]
@@ -161,7 +183,8 @@ mod tests {
             serde_json::json!({
                 "language": "en",
                 "autoRefreshSeconds": 10,
-                "autoRefreshOptions": [0, 2, 5, 10, 30]
+                "autoRefreshOptions": [0, 2, 5, 10, 30],
+                "favoriteAlerts": false
             })
         );
         let parsed: Language = serde_json::from_str("\"pt-BR\"").unwrap();

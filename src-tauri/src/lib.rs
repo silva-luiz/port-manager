@@ -8,6 +8,7 @@ mod process;
 mod settings;
 mod storage;
 mod termination;
+mod watcher;
 
 use tauri::Manager;
 use tauri_plugin_window_state::StateFlags;
@@ -24,10 +25,12 @@ pub fn run() {
                 .with_state_flags(StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED)
                 .build(),
         )
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             app.manage(storage::Database::open(&dir.join(DATABASE_FILE))?);
+            watcher::spawn(app.handle().clone())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -41,6 +44,7 @@ pub fn run() {
             commands::settings::get_settings,
             commands::settings::set_language,
             commands::settings::set_auto_refresh,
+            commands::settings::set_favorite_alerts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { AppError, AppErrorKind } from "../types/error";
-import type { Favorite } from "../types/favorites";
+import type { Favorite, FavoritePortChange } from "../types/favorites";
 import type { HealthStatus } from "../types/health";
 import type { PortSnapshot } from "../types/ports";
 import type { ProcessDetails, TerminationOutcome } from "../types/process";
@@ -23,6 +24,10 @@ export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
   setLanguage: (language: Locale) => invoke<Settings>("set_language", { language }),
   setAutoRefresh: (seconds: number) => invoke<Settings>("set_auto_refresh", { seconds }),
+  setFavoriteAlerts: (enabled: boolean) => invoke<Settings>("set_favorite_alerts", { enabled }),
+  /** Emitted by the backend watcher (src-tauri/src/watcher.rs) while alerts are on. */
+  onFavoritePortChange: (handler: (change: FavoritePortChange) => void): Promise<UnlistenFn> =>
+    listen<FavoritePortChange>("favorite-port-changed", (event) => handler(event.payload)),
 };
 
 const KNOWN_KINDS = new Set<AppErrorKind>([

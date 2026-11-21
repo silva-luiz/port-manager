@@ -8,4 +8,6 @@ export interface Settings {
   autoRefreshSeconds: number;
   /** Allowed values for `autoRefreshSeconds`, provided by the backend. */
   autoRefreshOptions: number[];
+  /** Notify when a favorite port becomes busy or free. */
+  favoriteAlerts: boolean;
 }

@@ -6,6 +6,7 @@ import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { FavoritesPage } from "./features/favorites/FavoritesPage";
 import { PortsPage } from "./features/ports/PortsPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
+import { useFavoriteAlerts } from "./hooks/useFavoriteAlerts";
 import { useFavorites } from "./hooks/useFavorites";
 import { useHealthCheck } from "./hooks/useHealthCheck";
 import { usePortSnapshot } from "./hooks/usePortSnapshot";
@@ -20,6 +21,8 @@ export default function App() {
   // Shared across views so the dashboard, table and favorites always agree.
   const ports = usePortSnapshot(settings.autoRefreshSeconds);
   const favorites = useFavorites();
+  // A favorite changed while alerts are on: bring the views up to date quietly.
+  useFavoriteAlerts(() => void ports.refresh({ background: true }));
 
   return (
     <div className="flex h-full">

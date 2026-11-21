@@ -171,6 +171,18 @@ export const ptBR: Messages = {
     free: "Livre",
     noSockets: "Nenhum socket nesta porta",
     unknownProcess: "Processo desconhecido",
+    alertsToggle: "Avisar quando estas portas ficarem ocupadas ou livres",
+    alertsHint: "Verificado a cada poucos segundos, mesmo com o Port Manager minimizado.",
+    alertsBlocked:
+      "O Windows está bloqueando as notificações do Port Manager. Permita em Configurações › Sistema › Notificações.",
+    alertsSaveError: (error) => `Não foi possível alterar os avisos: ${error}`,
+  },
+  notifications: {
+    busyTitle: (port) => `A porta ${port} está em uso agora`,
+    busyBody: (name, pid) => `${name} (PID ${pid}) começou a usá-la.`,
+    busyBodyUnknown: "Um processo começou a usá-la.",
+    freeTitle: (port) => `A porta ${port} está livre agora`,
+    freeBody: "Nenhum processo a está usando mais.",
   },
   settings: {
     languageTitle: "Idioma",
