@@ -27,6 +27,8 @@ export interface PortEntry {
   remoteAddress: string | null;
   remotePort: number | null;
   state: TcpState;
+  /** Socket still counts as in use (computed by the backend; never re-derive it). */
+  live: boolean;
   pid: number | null;
   processName: string | null;
 }

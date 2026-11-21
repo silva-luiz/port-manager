@@ -34,6 +34,14 @@ pub enum TcpState {
     Unknown,
 }
 
+impl TcpState {
+    /// A socket in TIME_WAIT or CLOSED is a leftover of a finished
+    /// connection; it does not mean anything is using the port.
+    pub fn is_live(self) -> bool {
+        !matches!(self, TcpState::TimeWait | TcpState::Closed)
+    }
+}
+
 /// One row of the OS TCP table, before any process information is attached.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TcpConnection {
@@ -92,6 +100,15 @@ mod tests {
         let peer: SocketAddr = "10.0.0.1:443".parse().unwrap();
         assert_eq!(meaningful_remote(TcpState::Listen, peer), None);
         assert_eq!(meaningful_remote(TcpState::Established, peer), Some(peer));
+    }
+
+    #[test]
+    fn finished_connections_are_not_live() {
+        assert!(TcpState::Listen.is_live());
+        assert!(TcpState::Established.is_live());
+        assert!(TcpState::CloseWait.is_live());
+        assert!(!TcpState::TimeWait.is_live());
+        assert!(!TcpState::Closed.is_live());
     }
 
     #[test]

@@ -80,7 +80,9 @@ port-manager/
    with `processLookupError` set.
 4. `ports::snapshot()` joins the two and computes the dashboard summary, so the numbers are
    defined in one place:
-   - **Active ports**: distinct local ports, excluding TIME_WAIT/CLOSED sockets.
+   - **Active ports**: distinct local ports with a live socket. Liveness is defined once,
+     in `TcpState::is_live()` (everything except TIME_WAIT/CLOSED), and sent to the UI as
+     `PortEntry.live`; the Favorites view uses that flag instead of its own rule.
    - **Listening**: distinct local ports in LISTEN (IPv4 and IPv6 counted once).
    - **Established**: ESTABLISHED sockets.
    - **Processes**: distinct owning PIDs.

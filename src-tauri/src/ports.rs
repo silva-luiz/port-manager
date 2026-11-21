@@ -18,6 +18,9 @@ pub struct PortEntry {
     pub remote_address: Option<String>,
     pub remote_port: Option<u16>,
     pub state: TcpState,
+    /// Whether the socket still counts as in use (see `TcpState::is_live`).
+    /// The UI relies on this instead of re-implementing the rule.
+    pub live: bool,
     pub pid: Option<u32>,
     /// `None` when there is no owning process or it exited before lookup.
     pub process_name: Option<String>,
@@ -73,6 +76,7 @@ fn build_entries(connections: Vec<TcpConnection>, names: &HashMap<u32, String>) 
             remote_address: c.remote.map(|r| r.ip().to_string()),
             remote_port: c.remote.map(|r| r.port()),
             state: c.state,
+            live: c.state.is_live(),
             process_name: c.pid.and_then(|pid| names.get(&pid).cloned()),
             pid: c.pid,
         })
@@ -80,12 +84,10 @@ fn build_entries(connections: Vec<TcpConnection>, names: &HashMap<u32, String>) 
 }
 
 fn summarize(entries: &[PortEntry]) -> PortSummary {
-    let is_live = |e: &&PortEntry| !matches!(e.state, TcpState::TimeWait | TcpState::Closed);
-
     PortSummary {
         active_ports: entries
             .iter()
-            .filter(is_live)
+            .filter(|e| e.live)
             .map(|e| e.local_port)
             .collect::<HashSet<_>>()
             .len(),
@@ -188,6 +190,7 @@ mod tests {
         assert_eq!(json["localAddress"], "::1");
         assert_eq!(json["protocol"], "tcp6");
         assert_eq!(json["state"], "listen");
+        assert_eq!(json["live"], true);
         assert!(json["processName"].is_null());
     }
 }

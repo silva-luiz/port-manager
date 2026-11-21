@@ -9,12 +9,10 @@ export interface PortOwner {
 
 export interface FavoriteUsage {
   port: number;
-  /** True when at least one socket on the port is live (not TIME_WAIT/CLOSED). */
+  /** True when at least one socket on the port is live (as decided by the backend). */
   inUse: boolean;
   owners: PortOwner[];
 }
-
-const DEAD_STATES: TcpState[] = ["timeWait", "closed"];
 
 /** Joins favorites with the current snapshot, grouping sockets by owning process. */
 export function favoriteUsage(favorites: Favorite[], entries: PortEntry[]): FavoriteUsage[] {
@@ -29,7 +27,7 @@ export function favoriteUsage(favorites: Favorite[], entries: PortEntry[]): Favo
     }
     return {
       port,
-      inUse: sockets.some((s) => !DEAD_STATES.includes(s.state)),
+      inUse: sockets.some((s) => s.live),
       owners: [...owners.values()],
     };
   });
