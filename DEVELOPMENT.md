@@ -42,6 +42,12 @@ Tauri crate embeds `dist/` at compile time.
 4. Add the TypeScript mirror type under `src/types/` and a wrapper in `src/lib/api.ts`.
 5. Add Rust unit tests for the logic and for the serialized shape when it matters.
 
+## Changing the app icon
+
+Edit `app-icon.svg` (or replace it with a 1024×1024 PNG) and run
+`npm run tauri icon app-icon.svg`. Delete the generated `android/` and `ios/` folders; this is
+a desktop-only app.
+
 ## Changing the database schema
 
 Append a new SQL string to `MIGRATIONS` in `src-tauri/src/storage.rs`. Never edit or reorder
