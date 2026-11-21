@@ -228,9 +228,17 @@ monitor is no longer connected.
 
 ## Platform support
 
-OS-specific code lives in `<module>/windows.rs`, selected with `#[cfg(windows)]` behind one
-shared function in `<module>/mod.rs`. Other platforms currently get `AppError::Unsupported`;
-Linux support means adding `linux.rs` next to each `windows.rs`.
+OS-specific code lives in `<module>/windows.rs` and `<module>/linux.rs`, selected with
+`#[cfg(...)]` behind one shared function in `<module>/mod.rs`; other platforms get
+`AppError::Unsupported`.
+
+On Linux everything comes from `/proc`: sockets from `/proc/net/{tcp,tcp6,udp,udp6}`, their
+owners from `/proc/<pid>/fd` links (`socket:[inode]`, readable only for the user's own
+processes without root), process data from `/proc/<pid>/{exe,stat,cmdline,comm}`, and
+termination uses `kill(SIGKILL)`. PID 1, `kthreadd` and kernel threads are protected, and PIDs
+that `kill(2)` would interpret as process groups are rejected. The text parsers
+(`network/procfs.rs`, `process/procfs.rs`) are platform-independent and unit-tested on every
+OS; the Ubuntu CI job builds and tests the Linux-only code.
 
 ## Planned backend modules
 

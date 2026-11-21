@@ -5,6 +5,9 @@ All notable changes to Port Manager. Versions follow [Semantic Versioning](https
 ## [0.2.0] - Unreleased
 
 ### Added
+- Linux support: sockets, owners, process details and termination via `/proc` and `kill(2)`.
+- UDP sockets (IPv4/IPv6) alongside TCP, with a protocol filter.
+- "Open folder" to show a process's executable in the file manager.
 - Brazilian Portuguese (pt-BR) interface, chosen under Settings.
 - Command line of each process in the ports table (arguments next to the name, searchable)
   and in the details panel, plus the parent process and child processes.
@@ -16,15 +19,19 @@ All notable changes to Port Manager. Versions follow [Semantic Versioning](https
 - Option to keep running in the notification area when the window is closed.
 - "Hide finished connections" filter (TIME_WAIT/CLOSED), on by default.
 - Listening ports grouped by process on the dashboard.
+- Own app icon.
 - Keyboard shortcuts: `Ctrl+F` search, `F5`/`Ctrl+R` refresh, `Esc` close the details panel.
 - Window size, position and maximized state are remembered.
 - Rotating log file in `%LOCALAPPDATA%\com.portmanager.app\logs`.
-- CI on GitHub Actions and a release workflow that drafts releases with the installers.
+- CI on GitHub Actions (Windows and Linux) and a release workflow that drafts releases with
+  the installers.
+- Component tests for the end-process dialog and the ports toolbar.
 
 ### Changed
 - Only one instance runs at a time; launching again shows the existing window.
 - Backend health moved from the dashboard to Settings.
 - Production Content Security Policy no longer allows inline styles.
+- Every app command now requires an explicit permission in the window's capability.
 
 ### Fixed
 - Overlapping refreshes could show an older port list.

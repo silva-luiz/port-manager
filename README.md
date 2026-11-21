@@ -3,7 +3,10 @@
 A lightweight desktop utility for developers to see which local TCP ports are in use, which
 processes own them, and to stop those processes when needed.
 
-Built with Tauri 2 (Rust) and React + TypeScript. The initial target is Windows 10/11.
+Built with Tauri 2 (Rust) and React + TypeScript. Runs on Windows 10/11 and Linux. To build on
+Linux, install the [Tauri Linux prerequisites](https://tauri.app/start/prerequisites/#linux)
+(WebKitGTK 4.1, libayatana-appindicator3 and friends); the CI workflow lists the exact Ubuntu
+packages.
 
 ## Status
 
