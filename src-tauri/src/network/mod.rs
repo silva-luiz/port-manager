@@ -37,6 +37,8 @@ pub enum SocketState {
     Closing,
     LastAck,
     TimeWait,
+    /// Windows-only (MIB_TCP_STATE_DELETE_TCB).
+    #[cfg_attr(not(windows), allow(dead_code))]
     DeleteTcb,
     /// UDP has no connection state; a bound UDP socket is simply in use.
     Bound,
@@ -92,6 +94,7 @@ fn meaningful_remote(state: SocketState, remote: SocketAddr) -> Option<SocketAdd
 
 /// PID 0 is the idle pseudo-process; Windows reports it for sockets that no
 /// longer belong to any process (e.g. TIME_WAIT).
+#[cfg_attr(not(windows), allow(dead_code))]
 fn owning_pid(raw: u32) -> Option<u32> {
     (raw != 0).then_some(raw)
 }
