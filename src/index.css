@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+  --color-base: #14181f;
+  --color-surface: #1a1f28;
+  --color-raised: #212733;
+  --color-line: #272e3a;
+  --color-fg: #d5dbe3;
+  --color-muted: #808a99;
+  --color-accent: #7aa7f0;
+  --color-ok: #5fbf8a;
+  --color-warn: #d9a64e;
+  --color-danger: #e06c6c;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-base text-fg font-sans text-[13px] leading-5 antialiased;
+    color-scheme: dark;
+    user-select: none;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
