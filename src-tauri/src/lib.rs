@@ -11,10 +11,13 @@ mod termination;
 mod watcher;
 
 use tauri::{AppHandle, Manager};
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_plugin_window_state::StateFlags;
 
 const DATABASE_FILE: &str = "port-manager.db";
 const MAIN_WINDOW: &str = "main";
+/// Per log file; the 3 most recent files are kept.
+const MAX_LOG_BYTES: u128 = 1024 * 1024;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,7 +35,9 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
+        .plugin(logger())
         .setup(|app| {
+            log::info!("Port Manager {} starting", env!("CARGO_PKG_VERSION"));
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             app.manage(storage::Database::open(&dir.join(DATABASE_FILE))?);
@@ -63,4 +68,19 @@ pub(crate) fn show_main_window(app: &AppHandle) {
         let _ = window.show();
         let _ = window.set_focus();
     }
+}
+
+/// Rotating log file in the app's log folder (%LOCALAPPDATA%\<identifier>\logs),
+/// plus the terminal in debug builds.
+fn logger() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    let mut builder = tauri_plugin_log::Builder::new()
+        .clear_targets()
+        .target(Target::new(TargetKind::LogDir { file_name: None }))
+        .level(log::LevelFilter::Info)
+        .max_file_size(MAX_LOG_BYTES)
+        .rotation_strategy(RotationStrategy::KeepSome(3));
+    if cfg!(debug_assertions) {
+        builder = builder.target(Target::new(TargetKind::Stdout));
+    }
+    builder.build()
 }

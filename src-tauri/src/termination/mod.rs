@@ -80,6 +80,7 @@ pub fn terminate(
     };
 
     let exited = platform::terminate(pid, &current)?;
+    log::info!("ended {current} (PID {pid}), exited: {exited}");
 
     let children = children
         .into_iter()
@@ -89,6 +90,10 @@ pub fn terminate(
             } else {
                 platform::terminate(child, &name).err()
             };
+            match &error {
+                None => log::info!("ended child {name} (PID {child}) of PID {pid}"),
+                Some(e) => log::warn!("could not end child {name} (PID {child}): {e}"),
+            }
             ChildOutcome {
                 pid: child,
                 name,

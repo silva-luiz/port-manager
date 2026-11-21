@@ -64,8 +64,12 @@ fn tick(app: &AppHandle, baseline: Option<HashMap<u16, Usage>>) -> Option<HashMa
     if ports.is_empty() {
         return None;
     }
-    let Ok(connections) = network::tcp_connections() else {
-        return baseline;
+    let connections = match network::tcp_connections() {
+        Ok(connections) => connections,
+        Err(e) => {
+            log::warn!("favorite port check skipped: {e}");
+            return baseline;
+        }
     };
 
     let current = usage_by_port(&connections, &ports);
@@ -80,7 +84,13 @@ fn tick(app: &AppHandle, baseline: Option<HashMap<u16, Usage>>) -> Option<HashMa
                     pid: usage.pid,
                     process_name: usage.pid.and_then(|pid| names.get(&pid).cloned()),
                 };
-                let _ = app.emit(EVENT, event);
+                log::info!(
+                    "favorite port {port} is now {}",
+                    if usage.in_use { "in use" } else { "free" }
+                );
+                if let Err(e) = app.emit(EVENT, event) {
+                    log::warn!("could not deliver favorite port event: {e}");
+                }
             }
         }
     }

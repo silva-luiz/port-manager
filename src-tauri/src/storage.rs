@@ -51,7 +51,10 @@ impl Database {
         let conn = self.conn.lock().map_err(|_| {
             AppError::storage("the database lock was poisoned by an earlier failure")
         })?;
-        f(&conn).map_err(storage_error)
+        f(&conn).map_err(|e| {
+            log::error!("database error: {e}");
+            storage_error(e)
+        })
     }
 }
 

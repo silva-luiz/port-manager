@@ -180,6 +180,13 @@ port-manager/
 - It runs in Rust rather than on a frontend timer because the frontend refresh pauses while
   the window is hidden, which is exactly when alerts matter most.
 
+## Logging
+
+`tauri-plugin-log` writes to a rotating file in the app log folder (1 MB, last 3 kept) and, in
+debug builds, to the terminal. Only Rust logs; the frontend has no log permission. Logged:
+start-up, every ended process (an audit trail), command errors (`run_blocking`), database
+errors (`Database::with`), skipped watcher ticks and detected favorite changes.
+
 ## Window state
 
 `tauri-plugin-window-state` (Rust side only, no frontend permission) saves size, position and

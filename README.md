@@ -33,6 +33,9 @@ Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that
 the favorites and settings. The window size, position and maximized state are remembered in
 `.window-state.json` in the same folder.
 
+Logs (app start, ended processes, errors, favorite port changes) are written to
+`%LOCALAPPDATA%\com.portmanager.app\logs`, rotated at 1 MB with the last 3 files kept.
+
 ## Prerequisites (Windows)
 
 | Tool | Version used | Notes |

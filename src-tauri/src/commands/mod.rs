@@ -13,7 +13,11 @@ use crate::error::AppError;
 pub(crate) async fn run_blocking<T: Send + 'static>(
     f: impl FnOnce() -> Result<T, AppError> + Send + 'static,
 ) -> Result<T, AppError> {
-    tauri::async_runtime::spawn_blocking(f)
+    let result = tauri::async_runtime::spawn_blocking(f)
         .await
-        .map_err(|e| AppError::internal(format!("background task failed: {e}")))?
+        .map_err(|e| AppError::internal(format!("background task failed: {e}")))?;
+    if let Err(e) = &result {
+        log::warn!("command failed: {e}");
+    }
+    result
 }
