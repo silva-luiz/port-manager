@@ -44,6 +44,11 @@ pub enum AppError {
     InvalidPort {
         port: u16,
     },
+    /// A settings value outside the allowed set.
+    InvalidSetting {
+        key: String,
+        value: String,
+    },
     InvalidProcessName,
     /// The PID now belongs to a different program than the one confirmed.
     ProcessNameMismatch {
@@ -91,6 +96,7 @@ impl std::fmt::Display for AppError {
             Self::Storage { detail } => write!(f, "database error: {detail}"),
             Self::InvalidPid { pid } => write!(f, "invalid PID {pid}"),
             Self::InvalidPort { port } => write!(f, "invalid port {port}"),
+            Self::InvalidSetting { key, value } => write!(f, "invalid value {value} for {key}"),
             Self::InvalidProcessName => write!(f, "invalid process name"),
             Self::ProcessNameMismatch {
                 pid,

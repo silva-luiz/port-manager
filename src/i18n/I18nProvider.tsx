@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { api, toAppError } from "../lib/api";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { useSettings } from "../settings/SettingsProvider";
 import type { AppError } from "../types/error";
 import type { Locale } from "../types/settings";
 import { describeError } from "./describeError";
@@ -24,54 +24,27 @@ interface I18nValue {
 
 const I18nContext = createContext<I18nValue | null>(null);
 
-/**
- * Loads the saved language before rendering so the UI never flashes in the
- * wrong language. Falls back to English if settings can't be read.
- */
+/** Derives text and formatting from the saved language (see SettingsProvider). */
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale | null>(null);
+  const { settings, setLanguage } = useSettings();
+  const locale = settings.language;
 
   useEffect(() => {
-    api
-      .getSettings()
-      .then((s) => setLocaleState(s.language))
-      .catch(() => setLocaleState("en"));
-  }, []);
-
-  useEffect(() => {
-    if (locale) document.documentElement.lang = locale;
+    document.documentElement.lang = locale;
   }, [locale]);
 
-  const setLocale = useCallback(
-    async (next: Locale) => {
-      const previous = locale;
-      setLocaleState(next);
-      try {
-        const saved = await api.setLanguage(next);
-        setLocaleState(saved.language);
-        return null;
-      } catch (e) {
-        setLocaleState(previous);
-        return toAppError(e);
-      }
-    },
-    [locale],
-  );
-
-  const value = useMemo<I18nValue | null>(() => {
-    if (!locale) return null;
+  const value = useMemo<I18nValue>(() => {
     const t = MESSAGES[locale];
     return {
       locale,
       t,
-      setLocale,
+      setLocale: setLanguage,
       formatTime: (ms) => new Date(ms).toLocaleTimeString(locale),
       formatNumber: (n) => n.toLocaleString(locale),
       describeError: (error) => describeError(t, error),
     };
-  }, [locale, setLocale]);
+  }, [locale, setLanguage]);
 
-  if (!value) return null;
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

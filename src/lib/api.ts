@@ -22,6 +22,7 @@ export const api = {
   removeFavorite: (port: number) => invoke<Favorite[]>("remove_favorite", { port }),
   getSettings: () => invoke<Settings>("get_settings"),
   setLanguage: (language: Locale) => invoke<Settings>("set_language", { language }),
+  setAutoRefresh: (seconds: number) => invoke<Settings>("set_auto_refresh", { seconds }),
 };
 
 const KNOWN_KINDS = new Set<AppErrorKind>([
@@ -31,6 +32,7 @@ const KNOWN_KINDS = new Set<AppErrorKind>([
   "storage",
   "invalidPid",
   "invalidPort",
+  "invalidSetting",
   "invalidProcessName",
   "processNameMismatch",
   "processNotFound",

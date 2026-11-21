@@ -167,7 +167,12 @@ export const en = {
   settings: {
     languageTitle: "Language",
     languageHint: "Choose the language used throughout Port Manager.",
-    saveError: (error: string) => `Couldn't save the language: ${error}`,
+    autoRefreshTitle: "Automatic refresh",
+    autoRefreshHint:
+      "Re-read the port list periodically. It pauses while Port Manager is minimized.",
+    autoRefreshOff: "Off",
+    autoRefreshEvery: (seconds: number) => `Every ${seconds} seconds`,
+    saveError: (error: string) => `Couldn't save the setting: ${error}`,
   },
   errors: {
     internal: (detail: string) => `Something went wrong: ${detail}`,
@@ -176,6 +181,7 @@ export const en = {
     storage: (detail: string) => `The local database failed: ${detail}`,
     invalidPid: (pid: number) => `PID ${pid} is not a real process.`,
     invalidPort: (port: number) => `Port ${port} is not valid. Use a port between 1 and 65535.`,
+    invalidSetting: (key: string, value: string) => `"${value}" is not an allowed value for ${key}.`,
     invalidProcessName: "The process name sent to the backend was invalid.",
     processNameMismatch: (pid: number, expected: string, actual: string) =>
       `PID ${pid} now belongs to ${actual}, not ${expected}. Refresh the list and try again.`,

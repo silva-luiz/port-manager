@@ -32,6 +32,7 @@ pub fn run() {
             commands::favorites::remove_favorite,
             commands::settings::get_settings,
             commands::settings::set_language,
+            commands::settings::set_auto_refresh,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -18,3 +18,9 @@ pub async fn set_language(
 ) -> Result<Settings, AppError> {
     settings::set_language(&db, language)
 }
+
+/// `seconds` must be one of `Settings::auto_refresh_options`; 0 turns it off.
+#[tauri::command]
+pub async fn set_auto_refresh(db: State<'_, Database>, seconds: u32) -> Result<Settings, AppError> {
+    settings::set_auto_refresh(&db, seconds)
+}

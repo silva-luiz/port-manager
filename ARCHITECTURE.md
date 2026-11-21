@@ -86,7 +86,11 @@ port-manager/
    - **Listening**: distinct local ports in LISTEN (IPv4 and IPv6 counted once).
    - **Established**: ESTABLISHED sockets.
    - **Processes**: distinct owning PIDs.
-5. The frontend filters and sorts client-side (`features/ports/portQuery.ts`).
+5. The frontend filters and sorts client-side (`features/ports/portQuery.ts`). Non-live
+   sockets are hidden by default unless a specific state is chosen.
+6. Optional automatic refresh re-runs the scan on an interval while the page is visible
+   (`document.visibilityState`), never overlapping an in-flight scan, and without the busy
+   indicator. Responses from superseded scans are discarded.
 
 ## Frontend ↔ backend contract
 
@@ -148,7 +152,12 @@ port-manager/
 - Migrations are the `MIGRATIONS` list in `storage.rs`, tracked with `PRAGMA user_version`.
   Each runs in its own transaction. Append new migrations; never edit existing ones.
 - `settings` table: `key`/`value` text pairs behind the typed API in `settings.rs`
-  (currently only `language`).
+  (`language`, `auto_refresh_seconds`). Invalid stored values fall back to defaults; invalid
+  new values are rejected with `invalidSetting`. The backend also returns the allowed refresh
+  intervals so the UI doesn't hard-code them.
+- On the frontend, `SettingsProvider` loads settings once before the first render, applies
+  changes optimistically and reverts them if saving fails. `I18nProvider` derives the
+  language from it; `usePortSnapshot` takes the refresh interval.
 - `favorites` table: `port` (primary key, CHECK 1–65535) and `created_at_ms`. Add/remove are
   idempotent and return the full updated list so the UI has a single source of truth.
 - The Favorites view joins favorites with the current port snapshot on the frontend

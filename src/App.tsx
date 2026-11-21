@@ -10,13 +10,15 @@ import { useFavorites } from "./hooks/useFavorites";
 import { useHealthCheck } from "./hooks/useHealthCheck";
 import { usePortSnapshot } from "./hooks/usePortSnapshot";
 import { useI18n } from "./i18n/I18nProvider";
+import { useSettings } from "./settings/SettingsProvider";
 
 export default function App() {
   const { t } = useI18n();
+  const { settings } = useSettings();
   const [view, setView] = useState<View>("dashboard");
   const health = useHealthCheck();
   // Shared across views so the dashboard, table and favorites always agree.
-  const ports = usePortSnapshot();
+  const ports = usePortSnapshot(settings.autoRefreshSeconds);
   const favorites = useFavorites();
 
   return (

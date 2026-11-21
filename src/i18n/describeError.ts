@@ -17,6 +17,8 @@ export function describeError(t: Messages, error: AppError): string {
       return e.invalidPid(error.pid);
     case "invalidPort":
       return e.invalidPort(error.port);
+    case "invalidSetting":
+      return e.invalidSetting(error.key, error.value);
     case "invalidProcessName":
       return e.invalidProcessName;
     case "processNameMismatch":

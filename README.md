@@ -11,16 +11,20 @@ Early development. What works today:
 
 - Dashboard with active ports, listening ports, established connections, process count and
   last refresh time.
-- Ports table listing every IPv4/IPv6 TCP socket with its owning process: search, filters by
-  process, port and state, sortable columns and a manual refresh button.
-- Process details panel (name, PID, executable path when Windows allows it, connection info).
-- Ending a process after a confirmation dialog. Critical Windows processes are refused, and
-  permission errors are explained rather than elevated.
+- Ports table listing every IPv4/IPv6 TCP socket with its owning process and command line
+  (so several `node.exe` can be told apart): search, filters by process, port and state,
+  sortable columns, finished connections (TIME_WAIT) hidden by default, and manual or optional
+  automatic refresh.
+- Process details panel: name, PID, executable path and command line when Windows allows it,
+  the parent process, child processes and connection info.
+- Ending a process after a confirmation dialog, optionally together with its child processes.
+  Critical Windows processes are refused, and permission errors are explained rather than
+  elevated.
 - Favorite ports, saved locally in SQLite: star a port from the table or details panel, or
   add one by number on the Favorites page, which shows whether each one is in use and by
   which process.
-- English and Brazilian Portuguese interface: choose the language under **Settings** (gear
-  icon at the bottom of the left rail). The choice is remembered.
+- **Settings** (gear icon at the bottom of the left rail): English or Brazilian Portuguese
+  interface, and automatic refresh (off, or every 2–30 seconds). Choices are remembered.
 - Backend health check.
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets

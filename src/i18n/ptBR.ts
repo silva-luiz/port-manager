@@ -172,7 +172,12 @@ export const ptBR: Messages = {
   settings: {
     languageTitle: "Idioma",
     languageHint: "Escolha o idioma usado em todo o Port Manager.",
-    saveError: (error) => `Não foi possível salvar o idioma: ${error}`,
+    autoRefreshTitle: "Atualização automática",
+    autoRefreshHint:
+      "Relê a lista de portas periodicamente. Fica pausada enquanto o Port Manager está minimizado.",
+    autoRefreshOff: "Desligada",
+    autoRefreshEvery: (seconds) => `A cada ${seconds} segundos`,
+    saveError: (error) => `Não foi possível salvar a configuração: ${error}`,
   },
   errors: {
     internal: (detail) => `Algo deu errado: ${detail}`,
@@ -181,6 +186,7 @@ export const ptBR: Messages = {
     storage: (detail) => `O banco de dados local falhou: ${detail}`,
     invalidPid: (pid) => `O PID ${pid} não é um processo real.`,
     invalidPort: (port) => `A porta ${port} não é válida. Use uma porta entre 1 e 65535.`,
+    invalidSetting: (key, value) => `"${value}" não é um valor permitido para ${key}.`,
     invalidProcessName: "O nome do processo enviado ao backend era inválido.",
     processNameMismatch: (pid, expected, actual) =>
       `O PID ${pid} agora pertence a ${actual}, não a ${expected}. Atualize a lista e tente novamente.`,

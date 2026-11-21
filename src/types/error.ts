@@ -6,6 +6,7 @@ export type AppError =
   | { kind: "internal" | "network" | "unsupported" | "storage"; detail: string }
   | { kind: "invalidPid"; pid: number }
   | { kind: "invalidPort"; port: number }
+  | { kind: "invalidSetting"; key: string; value: string }
   | { kind: "invalidProcessName" }
   | { kind: "processNameMismatch"; pid: number; expected: string; actual: string }
   | { kind: "processNotFound"; pid: number }

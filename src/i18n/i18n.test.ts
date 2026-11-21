@@ -11,6 +11,7 @@ const ALL_ERRORS: AppError[] = [
   { kind: "storage", detail: "disk" },
   { kind: "invalidPid", pid: 0 },
   { kind: "invalidPort", port: 0 },
+  { kind: "invalidSetting", key: "auto_refresh_seconds", value: "7" },
   { kind: "invalidProcessName" },
   { kind: "processNameMismatch", pid: 8, expected: "node.exe", actual: "hugo.exe" },
   { kind: "processNotFound", pid: 9 },
@@ -32,8 +33,10 @@ describe("describeError", () => {
   });
 
   it("keeps the variable parts in the sentence", () => {
-    expect(describeError(ptBR, ALL_ERRORS[7])).toMatch(/hugo\.exe.*node\.exe/);
-    expect(describeError(ptBR, ALL_ERRORS[10])).toContain("svc.exe (PID 4)");
+    const mismatch = ALL_ERRORS.find((e) => e.kind === "processNameMismatch")!;
+    const namedDenial = ALL_ERRORS.find((e) => e.kind === "permissionDenied" && e.name)!;
+    expect(describeError(ptBR, mismatch)).toMatch(/hugo\.exe.*node\.exe/);
+    expect(describeError(ptBR, namedDenial)).toContain("svc.exe (PID 4)");
   });
 });
 
