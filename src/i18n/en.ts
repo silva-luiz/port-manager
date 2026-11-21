@@ -38,7 +38,7 @@ export const en = {
     checkedAt: "Checked at",
   },
   dashboard: {
-    intro: "TCP and UDP sockets on this machine, read from the Windows connection tables.",
+    intro: "TCP and UDP sockets on this machine, read from the operating system's connection tables.",
     listeningTitle: "Listening ports by process",
     listeningEmpty: "No process is listening on a TCP port.",
     stats: {
@@ -212,11 +212,11 @@ export const en = {
       `PID ${pid} now belongs to ${actual}, not ${expected}. Refresh the list and try again.`,
     processNotFound: (pid: number) => `No running process has PID ${pid}. It may have exited; refresh the list.`,
     permissionDeniedNamed: (name: string, pid: number) =>
-      `Windows didn't allow access to ${name} (PID ${pid}). It may be protected or running as another user, and Port Manager runs without administrator rights.`,
+      `The system didn't allow access to ${name} (PID ${pid}). It may be protected or running as another user, and Port Manager runs without administrator rights.`,
     permissionDenied: (pid: number) =>
-      `Windows denied access to PID ${pid}. It probably belongs to the system or another user, and Port Manager runs without administrator rights.`,
+      `The system denied access to PID ${pid}. It probably belongs to the system or another user, and Port Manager runs without administrator rights.`,
     protectedCritical: (name: string) =>
-      `${name} is a critical Windows process. Ending it would crash or destabilize the system, so Port Manager won't do it.`,
+      `${name} is a critical system process. Ending it would crash or destabilize the system, so Port Manager won't do it.`,
     protectedSelf: "Port Manager can't end its own process.",
   },
 };

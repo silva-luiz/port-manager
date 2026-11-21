@@ -1,4 +1,4 @@
-//! Placeholder for platforms without an implementation yet (e.g. Linux).
+//! Placeholder for platforms without an implementation yet (e.g. macOS).
 
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ use crate::error::AppError;
 
 fn unsupported() -> AppError {
     AppError::Unsupported {
-        detail: "process inspection is only implemented for Windows".into(),
+        detail: "process inspection is only implemented for Windows and Linux".into(),
     }
 }
 

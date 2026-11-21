@@ -1,6 +1,8 @@
 //! Process termination. Only ever invoked by an explicit, confirmed user
 //! action from the UI; every request is re-validated here.
 
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(windows)]
 mod windows;
 
@@ -120,13 +122,16 @@ fn self_protected() -> AppError {
 #[cfg(windows)]
 use windows as platform;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+use linux as platform;
+
+#[cfg(not(any(windows, target_os = "linux")))]
 mod platform {
     use crate::error::AppError;
 
     fn unsupported() -> AppError {
         AppError::Unsupported {
-            detail: "ending processes is only implemented for Windows".into(),
+            detail: "ending processes is only implemented for Windows and Linux".into(),
         }
     }
 
@@ -136,6 +141,101 @@ mod platform {
 
     pub fn terminate(_pid: u32, _name: &str) -> Result<bool, AppError> {
         Err(unsupported())
+    }
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod linux_tests {
+    use super::*;
+    use std::process::{Child, Command};
+    use std::time::{Duration, Instant};
+
+    fn name_of(pid: u32) -> String {
+        process::process_table().unwrap()[&pid].name.clone()
+    }
+
+    fn is_running(pid: u32) -> bool {
+        std::fs::read_to_string(format!("/proc/{pid}/stat"))
+            .ok()
+            .and_then(|s| process::procfs::parse_stat(&s))
+            .is_some_and(|s| s.state != 'Z')
+    }
+
+    /// `sh` running `sleep`; the trailing command stops the shell from exec-ing sleep.
+    #[allow(
+        clippy::zombie_processes,
+        reason = "the Child is returned and every caller waits on it"
+    )]
+    fn spawn_tree() -> (Child, u32) {
+        let mut parent = Command::new("sh")
+            .args(["-c", "sleep 30; true"])
+            .spawn()
+            .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            let table = process::process_table().unwrap();
+            if let Some((&pid, _)) = table
+                .iter()
+                .find(|(_, e)| e.parent_pid == Some(parent.id()) && e.name == "sleep")
+            {
+                return (parent, pid);
+            }
+            if Instant::now() >= deadline {
+                let _ = parent.kill();
+                let _ = parent.wait();
+                panic!("sleep child never appeared");
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
+
+    #[test]
+    fn ends_a_matching_process() {
+        let mut child = Command::new("sleep").arg("30").spawn().unwrap();
+        let outcome = terminate(child.id(), &name_of(child.id()), false).unwrap();
+        assert!(outcome.exited);
+        assert!(!child.wait().unwrap().success());
+    }
+
+    #[test]
+    fn ends_the_whole_tree_when_asked_and_only_then() {
+        let (mut parent, child) = spawn_tree();
+        terminate(parent.id(), &name_of(parent.id()), false).unwrap();
+        parent.wait().unwrap();
+        assert!(is_running(child), "child must survive without the option");
+        terminate(child, "sleep", false).unwrap();
+
+        let (mut parent, child) = spawn_tree();
+        let outcome = terminate(parent.id(), &name_of(parent.id()), true).unwrap();
+        assert_eq!(outcome.children.len(), 1);
+        assert!(outcome.children[0].error.is_none());
+        parent.wait().unwrap();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while is_running(child) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(!is_running(child), "child must be gone");
+    }
+
+    #[test]
+    fn refuses_mismatched_names_and_protected_targets() {
+        let mut child = Command::new("sleep").arg("30").spawn().unwrap();
+        assert!(matches!(
+            terminate(child.id(), "node", false),
+            Err(AppError::ProcessNameMismatch { .. })
+        ));
+        assert!(child.try_wait().unwrap().is_none());
+        child.kill().unwrap();
+        child.wait().unwrap();
+
+        assert!(matches!(
+            terminate(1, &name_of(1), true),
+            Err(AppError::ProtectedProcess { .. })
+        ));
+        assert!(matches!(
+            terminate(std::process::id(), "x", false),
+            Err(AppError::ProtectedProcess { .. })
+        ));
     }
 }
 

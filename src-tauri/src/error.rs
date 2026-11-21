@@ -29,7 +29,7 @@ pub enum AppError {
         detail: String,
     },
     /// The operation is not implemented for the current operating system.
-    #[cfg_attr(windows, allow(dead_code))]
+    #[cfg_attr(any(windows, target_os = "linux"), allow(dead_code))]
     Unsupported {
         detail: String,
     },

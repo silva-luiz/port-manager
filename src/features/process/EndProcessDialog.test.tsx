@@ -83,7 +83,7 @@ describe("EndProcessDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Encerrar processo" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain("O Windows não permitiu acesso a node.exe (PID 4321)");
+    expect(alert.textContent).toContain("O sistema não permitiu acesso a node.exe (PID 4321)");
     expect(onEnded).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Encerrar processo" })).toBeTruthy();
   });

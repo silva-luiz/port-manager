@@ -1,6 +1,11 @@
 //! TCP and UDP socket discovery. Reading the OS socket tables is platform
 //! specific and lives in per-OS submodules; the types here are shared.
 
+#[cfg(target_os = "linux")]
+mod linux;
+// Pure parser, compiled everywhere so it is tested on every platform.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+mod procfs;
 #[cfg(windows)]
 mod windows;
 
@@ -64,10 +69,14 @@ pub fn sockets() -> Result<Vec<NetSocket>, AppError> {
     {
         windows::sockets()
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        linux::sockets()
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         Err(AppError::Unsupported {
-            detail: "port discovery is only implemented for Windows".into(),
+            detail: "port discovery is only implemented for Windows and Linux".into(),
         })
     }
 }

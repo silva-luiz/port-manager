@@ -6,10 +6,19 @@ pub(crate) mod windows;
 #[cfg(windows)]
 use windows as imp;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+use linux as imp;
+
+#[cfg(not(any(windows, target_os = "linux")))]
 mod unsupported;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux")))]
 use unsupported as imp;
+
+// Pure parsers, compiled everywhere so they are tested on every platform.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub(crate) mod procfs;
 
 use serde::Serialize;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -237,7 +246,7 @@ mod tests {
         assert!(matches!(details(0), Err(AppError::InvalidPid { pid: 0 })));
     }
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     #[test]
     fn details_of_own_process_include_path_command_line_and_parent() {
         let d = details(std::process::id()).unwrap();
@@ -249,7 +258,7 @@ mod tests {
         assert!(d.parent.is_some(), "the test runner started this process");
     }
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     #[test]
     fn unknown_pid_is_not_found() {
         // PIDs are multiples of 4 on Windows; this one is never allocated in practice.

@@ -37,7 +37,7 @@ export const ptBR: Messages = {
     checkedAt: "Verificado às",
   },
   dashboard: {
-    intro: "Sockets TCP e UDP desta máquina, lidos das tabelas de conexões do Windows.",
+    intro: "Sockets TCP e UDP desta máquina, lidos das tabelas de conexões do sistema operacional.",
     listeningTitle: "Portas escutando por processo",
     listeningEmpty: "Nenhum processo está escutando em uma porta TCP.",
     stats: {
@@ -218,11 +218,11 @@ export const ptBR: Messages = {
     processNotFound: (pid) =>
       `Nenhum processo em execução tem o PID ${pid}. Ele pode ter sido encerrado; atualize a lista.`,
     permissionDeniedNamed: (name, pid) =>
-      `O Windows não permitiu acesso a ${name} (PID ${pid}). Ele pode estar protegido ou ser executado por outro usuário, e o Port Manager é executado sem privilégios de administrador.`,
+      `O sistema não permitiu acesso a ${name} (PID ${pid}). Ele pode estar protegido ou ser executado por outro usuário, e o Port Manager é executado sem privilégios de administrador.`,
     permissionDenied: (pid) =>
-      `O Windows negou acesso ao PID ${pid}. Ele provavelmente pertence ao sistema ou a outro usuário, e o Port Manager é executado sem privilégios de administrador.`,
+      `O sistema negou acesso ao PID ${pid}. Ele provavelmente pertence ao sistema ou a outro usuário, e o Port Manager é executado sem privilégios de administrador.`,
     protectedCritical: (name) =>
-      `${name} é um processo crítico do Windows. Encerrá-lo travaria ou desestabilizaria o sistema, então o Port Manager não fará isso.`,
+      `${name} é um processo crítico do sistema. Encerrá-lo travaria ou desestabilizaria o sistema, então o Port Manager não fará isso.`,
     protectedSelf: "O Port Manager não pode encerrar o próprio processo.",
   },
 };
