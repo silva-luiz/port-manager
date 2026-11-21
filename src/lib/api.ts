@@ -25,6 +25,7 @@ export const api = {
   setLanguage: (language: Locale) => invoke<Settings>("set_language", { language }),
   setAutoRefresh: (seconds: number) => invoke<Settings>("set_auto_refresh", { seconds }),
   setFavoriteAlerts: (enabled: boolean) => invoke<Settings>("set_favorite_alerts", { enabled }),
+  setCloseToTray: (enabled: boolean) => invoke<Settings>("set_close_to_tray", { enabled }),
   /** Emitted by the backend watcher (src-tauri/src/watcher.rs) while alerts are on. */
   onFavoritePortChange: (handler: (change: FavoritePortChange) => void): Promise<UnlistenFn> =>
     listen<FavoritePortChange>("favorite-port-changed", (event) => handler(event.payload)),

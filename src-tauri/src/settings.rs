@@ -11,6 +11,7 @@ use crate::storage::Database;
 const LANGUAGE_KEY: &str = "language";
 const AUTO_REFRESH_KEY: &str = "auto_refresh_seconds";
 const FAVORITE_ALERTS_KEY: &str = "favorite_alerts";
+const CLOSE_TO_TRAY_KEY: &str = "close_to_tray";
 
 /// Allowed automatic refresh intervals in seconds; 0 means off (the default).
 pub const AUTO_REFRESH_OPTIONS: &[u32] = &[0, 2, 5, 10, 30];
@@ -51,6 +52,8 @@ pub struct Settings {
     pub auto_refresh_options: &'static [u32],
     /// Notify when a favorite port becomes busy or free. Off by default.
     pub favorite_alerts: bool,
+    /// Closing the window hides it to the notification area. Off by default.
+    pub close_to_tray: bool,
 }
 
 pub fn get(db: &Database) -> Result<Settings, AppError> {
@@ -72,6 +75,7 @@ pub fn get(db: &Database) -> Result<Settings, AppError> {
             .unwrap_or(0),
         auto_refresh_options: AUTO_REFRESH_OPTIONS,
         favorite_alerts: stored.get(FAVORITE_ALERTS_KEY).is_some_and(|v| v == "true"),
+        close_to_tray: stored.get(CLOSE_TO_TRAY_KEY).is_some_and(|v| v == "true"),
     })
 }
 
@@ -92,12 +96,17 @@ pub fn set_auto_refresh(db: &Database, seconds: u32) -> Result<Settings, AppErro
 }
 
 pub fn set_favorite_alerts(db: &Database, enabled: bool) -> Result<Settings, AppError> {
-    put(
-        db,
-        FAVORITE_ALERTS_KEY,
-        if enabled { "true" } else { "false" },
-    )?;
+    put(db, FAVORITE_ALERTS_KEY, bool_value(enabled))?;
     get(db)
+}
+
+pub fn set_close_to_tray(db: &Database, enabled: bool) -> Result<Settings, AppError> {
+    put(db, CLOSE_TO_TRAY_KEY, bool_value(enabled))?;
+    get(db)
+}
+
+fn bool_value(enabled: bool) -> &'static str {
+    if enabled { "true" } else { "false" }
 }
 
 fn put(db: &Database, key: &str, value: &str) -> Result<(), AppError> {
@@ -123,6 +132,7 @@ mod tests {
         assert_eq!(s.auto_refresh_seconds, 0);
         assert_eq!(s.auto_refresh_options, AUTO_REFRESH_OPTIONS);
         assert!(!s.favorite_alerts);
+        assert!(!s.close_to_tray);
     }
 
     #[test]
@@ -131,6 +141,15 @@ mod tests {
         assert!(set_favorite_alerts(&db, true).unwrap().favorite_alerts);
         assert!(get(&db).unwrap().favorite_alerts);
         assert!(!set_favorite_alerts(&db, false).unwrap().favorite_alerts);
+    }
+
+    #[test]
+    fn persists_close_to_tray_independently() {
+        let db = Database::open_in_memory().unwrap();
+        let s = set_close_to_tray(&db, true).unwrap();
+        assert!(s.close_to_tray);
+        assert!(!s.favorite_alerts);
+        assert!(get(&db).unwrap().close_to_tray);
     }
 
     #[test]
@@ -184,7 +203,8 @@ mod tests {
                 "language": "en",
                 "autoRefreshSeconds": 10,
                 "autoRefreshOptions": [0, 2, 5, 10, 30],
-                "favoriteAlerts": false
+                "favoriteAlerts": false,
+                "closeToTray": false
             })
         );
         let parsed: Language = serde_json::from_str("\"pt-BR\"").unwrap();

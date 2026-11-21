@@ -187,6 +187,10 @@ export const en = {
       "Re-read the port list periodically. It pauses while Port Manager is minimized.",
     autoRefreshOff: "Off",
     autoRefreshEvery: (seconds: number) => `Every ${seconds} seconds`,
+    windowTitle: "Window",
+    closeToTray: "Keep running in the notification area when the window is closed",
+    closeToTrayHint:
+      "Favorite port alerts keep working. Click the tray icon to reopen the window, or use its menu to quit.",
     saveError: (error: string) => `Couldn't save the setting: ${error}`,
   },
   errors: {

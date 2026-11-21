@@ -6,7 +6,7 @@ import type { AppError } from "../../types/error";
 
 export function SettingsPage() {
   const { t, locale, setLocale, describeError } = useI18n();
-  const { settings, setAutoRefresh } = useSettings();
+  const { settings, setAutoRefresh, setCloseToTray } = useSettings();
   const [error, setError] = useState<AppError | null>(null);
 
   return (
@@ -42,6 +42,18 @@ export function SettingsPage() {
             </option>
           ))}
         </select>
+      </Group>
+
+      <Group title={t.settings.windowTitle} hint={t.settings.closeToTrayHint}>
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={settings.closeToTray}
+            onChange={async (e) => setError(await setCloseToTray(e.target.checked))}
+            className="accent-accent"
+          />
+          {t.settings.closeToTray}
+        </label>
       </Group>
 
       {error && <Notice onDismiss={() => setError(null)}>{t.settings.saveError(describeError(error))}</Notice>}

@@ -192,6 +192,10 @@ export const ptBR: Messages = {
       "Relê a lista de portas periodicamente. Fica pausada enquanto o Port Manager está minimizado.",
     autoRefreshOff: "Desligada",
     autoRefreshEvery: (seconds) => `A cada ${seconds} segundos`,
+    windowTitle: "Janela",
+    closeToTray: "Continuar na área de notificação ao fechar a janela",
+    closeToTrayHint:
+      "Os avisos das portas favoritas continuam funcionando. Clique no ícone da bandeja para reabrir a janela ou use o menu dele para sair.",
     saveError: (error) => `Não foi possível salvar a configuração: ${error}`,
   },
   errors: {

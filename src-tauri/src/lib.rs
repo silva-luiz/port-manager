@@ -8,9 +8,10 @@ mod process;
 mod settings;
 mod storage;
 mod termination;
+mod tray;
 mod watcher;
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, WindowEvent};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_plugin_window_state::StateFlags;
 
@@ -42,7 +43,22 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             app.manage(storage::Database::open(&dir.join(DATABASE_FILE))?);
             watcher::spawn(app.handle().clone())?;
+            let settings = settings::get(&app.state::<storage::Database>())?;
+            if let Err(e) = tray::sync(app.handle(), &settings) {
+                log::warn!("could not create the tray icon: {e}");
+            }
             Ok(())
+        })
+        // With "keep running in the notification area" on, closing the window
+        // hides it so favorite alerts keep working; Quit is in the tray menu.
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event
+                && window.label() == MAIN_WINDOW
+                && tray::should_hide_on_close(window.app_handle())
+            {
+                api.prevent_close();
+                let _ = window.hide();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::health::health_check,
@@ -56,6 +72,7 @@ pub fn run() {
             commands::settings::set_language,
             commands::settings::set_auto_refresh,
             commands::settings::set_favorite_alerts,
+            commands::settings::set_close_to_tray,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

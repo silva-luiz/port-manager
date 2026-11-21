@@ -26,7 +26,10 @@ Early development. What works today:
   free, even while the app is minimized.
 - One-click copy of PID, port, addresses, executable path and command line.
 - **Settings** (gear icon at the bottom of the left rail): English or Brazilian Portuguese
-  interface, and automatic refresh (off, or every 2–30 seconds). Choices are remembered.
+  interface, automatic refresh (off, or every 2–30 seconds), and keeping the app running in the
+  notification area when the window is closed (so favorite alerts keep working). Choices are
+  remembered. Only one copy of the app runs at a time; opening it again shows the existing
+  window.
 - Backend health check.
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets

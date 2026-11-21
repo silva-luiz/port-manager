@@ -10,4 +10,6 @@ export interface Settings {
   autoRefreshOptions: number[];
   /** Notify when a favorite port becomes busy or free. */
   favoriteAlerts: boolean;
+  /** Closing the window hides it to the notification area. */
+  closeToTray: boolean;
 }

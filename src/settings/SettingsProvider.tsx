@@ -4,7 +4,13 @@ import type { AppError } from "../types/error";
 import type { Locale, Settings } from "../types/settings";
 
 /** Used when settings can't be loaded (e.g. the page is open in a plain browser). */
-const FALLBACK: Settings = { language: "en", autoRefreshSeconds: 0, autoRefreshOptions: [0], favoriteAlerts: false };
+const FALLBACK: Settings = {
+  language: "en",
+  autoRefreshSeconds: 0,
+  autoRefreshOptions: [0],
+  favoriteAlerts: false,
+  closeToTray: false,
+};
 
 interface SettingsValue {
   settings: Settings;
@@ -12,6 +18,7 @@ interface SettingsValue {
   setLanguage: (language: Locale) => Promise<AppError | null>;
   setAutoRefresh: (seconds: number) => Promise<AppError | null>;
   setFavoriteAlerts: (enabled: boolean) => Promise<AppError | null>;
+  setCloseToTray: (enabled: boolean) => Promise<AppError | null>;
 }
 
 const SettingsContext = createContext<SettingsValue | null>(null);
@@ -55,6 +62,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLanguage: (language) => save({ language }, () => api.setLanguage(language)),
         setAutoRefresh: (seconds) => save({ autoRefreshSeconds: seconds }, () => api.setAutoRefresh(seconds)),
         setFavoriteAlerts: (enabled) => save({ favoriteAlerts: enabled }, () => api.setFavoriteAlerts(enabled)),
+        setCloseToTray: (enabled) => save({ closeToTray: enabled }, () => api.setCloseToTray(enabled)),
       },
     [settings, save],
   );

@@ -154,7 +154,7 @@ port-manager/
 - Migrations are the `MIGRATIONS` list in `storage.rs`, tracked with `PRAGMA user_version`.
   Each runs in its own transaction. Append new migrations; never edit existing ones.
 - `settings` table: `key`/`value` text pairs behind the typed API in `settings.rs`
-  (`language`, `auto_refresh_seconds`, `favorite_alerts`). Invalid stored values fall back to defaults; invalid
+  (`language`, `auto_refresh_seconds`, `favorite_alerts`, `close_to_tray`). Invalid stored values fall back to defaults; invalid
   new values are rejected with `invalidSetting`. The backend also returns the allowed refresh
   intervals so the UI doesn't hard-code them.
 - On the frontend, `SettingsProvider` loads settings once before the first render, applies
@@ -179,6 +179,16 @@ port-manager/
   Windows notification via `tauri-plugin-notification`, and quietly refreshes the views.
 - It runs in Rust rather than on a frontend timer because the frontend refresh pauses while
   the window is hidden, which is exactly when alerts matter most.
+
+## Single instance and tray
+
+- `tauri-plugin-single-instance` is registered first: a second launch only calls
+  `show_main_window`, so there is one watcher thread and one saved window state.
+- `tray.rs` keeps a tray icon in sync with the `close_to_tray` setting (created, relabelled on
+  language change, or removed). While it is on, `CloseRequested` on the main window is
+  prevented and the window is hidden; the tray's left click shows it, and its menu has Show
+  and Quit. The tray menu is native, so its two labels are the only UI text translated in
+  Rust.
 
 ## Logging
 
