@@ -19,6 +19,13 @@ Run from the project root unless noted.
 Before considering a change done, run: `npm test`, `npm run build`, `cargo fmt --check`,
 `cargo clippy --all-targets -- -D warnings` and `cargo test`.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push to `main`, every pull request and on demand:
+`npm ci`, `npm test`, `npm run build`, then `cargo fmt --check`, `cargo clippy --all-targets
+-- -D warnings` and `cargo test` on `windows-latest`. The frontend is built first because the
+Tauri crate embeds `dist/` at compile time.
+
 ## Adding a backend command
 
 1. Implement the logic in the appropriate domain module (not in `commands/`).
