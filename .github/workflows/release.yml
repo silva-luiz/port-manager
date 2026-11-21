@@ -1,0 +1,44 @@
+name: Release
+
+# Builds the Windows installers and attaches them to a DRAFT GitHub release.
+# Drafts are visible only to the repository's maintainers; publishing (which
+# creates the tag) is a manual step on GitHub.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installers
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build installers and draft release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Port Manager v__VERSION__
+          releaseBody: See CHANGELOG.md for what changed in this version.
+          releaseDraft: true
+          prerelease: false

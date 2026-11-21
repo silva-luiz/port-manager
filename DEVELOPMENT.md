@@ -26,6 +26,13 @@ Before considering a change done, run: `npm test`, `npm run build`, `cargo fmt -
 -- -D warnings` and `cargo test` on `windows-latest`. The frontend is built first because the
 Tauri crate embeds `dist/` at compile time.
 
+## Releasing
+
+1. Bump `version` in `package.json` (the app reads it) and `src-tauri/Cargo.toml`.
+2. Move the `Unreleased` entries in `CHANGELOG.md` under the new version and date.
+3. Push a tag `vX.Y.Z`, or run the **Release** workflow manually. It builds the installers and
+   attaches them to a **draft** GitHub release; review it and click *Publish* on GitHub.
+
 ## Adding a backend command
 
 1. Implement the logic in the appropriate domain module (not in `commands/`).
