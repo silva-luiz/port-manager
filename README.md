@@ -28,7 +28,8 @@ Early development. What works today:
 - Backend health check.
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets
-the favorites and settings.
+the favorites and settings. The window size, position and maximized state are remembered in
+`.window-state.json` in the same folder.
 
 ## Prerequisites (Windows)
 

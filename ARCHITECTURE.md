@@ -164,6 +164,12 @@ port-manager/
   (`favoriteUsage.ts`); "in use" uses the same rule as the dashboard (any socket that is not
   TIME_WAIT/CLOSED).
 
+## Window state
+
+`tauri-plugin-window-state` (Rust side only, no frontend permission) saves size, position and
+maximized state on close and restores them at launch. It ignores a saved position whose
+monitor is no longer connected.
+
 ## Internationalization
 
 - Supported UI languages: English (`en`, default) and Brazilian Portuguese (`pt-BR`).
