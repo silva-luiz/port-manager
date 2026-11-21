@@ -3,7 +3,6 @@ import { Notice } from "../../components/Notice";
 import type { FavoritesState } from "../../hooks/useFavorites";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { PortEntry } from "../../types/ports";
 import type { TerminationOutcome } from "../../types/process";
 import { DetailsPanel } from "../process/DetailsPanel";
 import { EndProcessDialog, type EndProcessTarget } from "../process/EndProcessDialog";
@@ -31,12 +30,17 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
   const { snapshot, error, loading, refresh } = ports;
   const [filters, setFilters] = useState<PortFilters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortOrder>({ key: "localPort", direction: "asc" });
-  const [selected, setSelected] = useState<PortEntry | null>(null);
+  // Store the key, not the row, so the panel always shows the latest data.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [endTarget, setEndTarget] = useState<EndProcessTarget | null>(null);
   // Stored as data so the message re-renders in a newly chosen language.
   const [ended, setEnded] = useState<TerminationOutcome | null>(null);
 
   const entries = useMemo(() => snapshot?.entries ?? [], [snapshot]);
+  const selected = useMemo(
+    () => (selectedKey ? (entries.find((e) => entryKey(e) === selectedKey) ?? null) : null),
+    [entries, selectedKey],
+  );
   const processNames = useMemo(() => distinctProcessNames(entries), [entries]);
   const states = useMemo(() => distinctStates(entries), [entries]);
   const visible = useMemo(() => sortPorts(filterPorts(entries, filters), sort), [entries, filters, sort]);
@@ -47,7 +51,6 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
 
   const handleEnded = (outcome: TerminationOutcome) => {
     setEndTarget(null);
-    setSelected((s) => (s?.pid === outcome.pid ? null : s));
     setEnded(outcome);
     void refresh();
   };
@@ -92,8 +95,8 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
               entries={visible}
               sort={sort}
               onSort={toggleSort}
-              selectedKey={selected ? entryKey(selected) : null}
-              onSelect={setSelected}
+              selectedKey={selected ? selectedKey : null}
+              onSelect={(entry) => setSelectedKey(entryKey(entry))}
               onEndProcess={setEndTarget}
               favoritePorts={favorites.ports}
               onToggleFavorite={toggleFavorite}
@@ -103,9 +106,9 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
 
         {selected && (
           <DetailsPanel
-            key={entryKey(selected)}
+            key={selectedKey}
             entry={selected}
-            onClose={() => setSelected(null)}
+            onClose={() => setSelectedKey(null)}
             onEndProcess={setEndTarget}
             isFavorite={favorites.ports.has(selected.localPort)}
             onToggleFavorite={toggleFavorite}

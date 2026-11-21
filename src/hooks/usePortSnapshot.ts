@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, toAppError } from "../lib/api";
 import type { AppError } from "../types/error";
 import type { PortSnapshot } from "../types/ports";
@@ -11,16 +11,22 @@ export function usePortSnapshot() {
   const [snapshot, setSnapshot] = useState<PortSnapshot | null>(null);
   const [error, setError] = useState<AppError | null>(null);
   const [loading, setLoading] = useState(true);
+  // Overlapping refreshes can resolve out of order; only the newest may win.
+  const latestRequest = useRef(0);
 
   const refresh = useCallback(async () => {
+    const request = ++latestRequest.current;
     setLoading(true);
     try {
-      setSnapshot(await api.listPorts());
+      const next = await api.listPorts();
+      if (request !== latestRequest.current) return;
+      setSnapshot(next);
       setError(null);
     } catch (e) {
+      if (request !== latestRequest.current) return;
       setError(toAppError(e));
     } finally {
-      setLoading(false);
+      if (request === latestRequest.current) setLoading(false);
     }
   }, []);
 

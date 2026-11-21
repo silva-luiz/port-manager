@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, toAppError } from "../lib/api";
 import type { AppError } from "../types/error";
 import type { Favorite } from "../types/favorites";
@@ -7,14 +7,21 @@ import type { Favorite } from "../types/favorites";
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [error, setError] = useState<AppError | null>(null);
+  // Each mutation returns the full list; apply only the newest one so rapid
+  // toggles can't be undone by a slower, older response.
+  const latestRequest = useRef(0);
 
   const run = useCallback(async (request: () => Promise<Favorite[]>) => {
+    const id = ++latestRequest.current;
     try {
-      setFavorites(await request());
-      setError(null);
+      const next = await request();
+      if (id === latestRequest.current) {
+        setFavorites(next);
+        setError(null);
+      }
       return true;
     } catch (e) {
-      setError(toAppError(e));
+      if (id === latestRequest.current) setError(toAppError(e));
       return false;
     }
   }, []);
