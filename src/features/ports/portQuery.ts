@@ -11,6 +11,10 @@ export interface PortFilters {
 
 export const EMPTY_FILTERS: PortFilters = { search: "", processName: "", port: "", state: "" };
 
+export function hasActiveFilters(filters: PortFilters): boolean {
+  return (Object.keys(EMPTY_FILTERS) as (keyof PortFilters)[]).some((k) => filters[k] !== EMPTY_FILTERS[k]);
+}
+
 export type SortKey = "localPort" | "protocol" | "localAddress" | "processName" | "pid" | "state";
 
 export interface SortOrder {

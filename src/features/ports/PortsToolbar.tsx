@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import { RefreshButton } from "../../components/RefreshButton";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { TcpState } from "../../types/ports";
-import { EMPTY_FILTERS, parsePort, type PortFilters } from "./portQuery";
+import { EMPTY_FILTERS, hasActiveFilters, parsePort, type PortFilters } from "./portQuery";
 
 interface PortsToolbarProps {
   filters: PortFilters;
@@ -20,7 +20,7 @@ export function PortsToolbar({ filters, onChange, processNames, states, onRefres
   const { t } = useI18n();
   const set = <K extends keyof PortFilters>(key: K, value: PortFilters[K]) => onChange({ ...filters, [key]: value });
   const portInvalid = filters.port.trim() !== "" && parsePort(filters.port) === null;
-  const hasFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS);
+  const hasFilters = hasActiveFilters(filters);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
