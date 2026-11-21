@@ -15,6 +15,9 @@ export const ptBR: Messages = {
     none: "Nenhum",
     clearFilters: "Limpar filtros",
     cancel: "Cancelar",
+    copy: "Copiar",
+    copied: "Copiado",
+    copyFailed: "Não foi possível copiar para a área de transferência",
   },
   backend: {
     checking: "Conectando ao backend",

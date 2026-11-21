@@ -16,6 +16,9 @@ export const en = {
     none: "None",
     clearFilters: "Clear filters",
     cancel: "Cancel",
+    copy: "Copy",
+    copied: "Copied",
+    copyFailed: "Couldn't copy to the clipboard",
   },
   backend: {
     checking: "Connecting to backend",

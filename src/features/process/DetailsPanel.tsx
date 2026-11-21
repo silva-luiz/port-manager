@@ -1,5 +1,6 @@
 import { Power, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { CopyButton } from "../../components/CopyButton";
 import { FavoriteButton } from "../../components/FavoriteButton";
 import { useProcessDetails, type ProcessDetailsState } from "../../hooks/useProcessDetails";
 import { useI18n } from "../../i18n/I18nProvider";
@@ -39,10 +40,13 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
 
       <Section title={t.details.process}>
         <Field label={t.details.name}>{name ?? <Missing>{t.details.noOwner}</Missing>}</Field>
-        <Field label={t.details.pid} mono>
+        <Field label={t.details.pid} mono copy={entry.pid?.toString()}>
           {entry.pid ?? <Missing>{t.common.none}</Missing>}
         </Field>
-        <Field label={t.details.executable}>
+        <Field
+          label={t.details.executable}
+          copy={details.phase === "loaded" ? (details.details.executablePath ?? undefined) : undefined}
+        >
           <ExecutablePath entry={entry} state={details} />
         </Field>
         {details.phase === "loaded" && <Lineage details={details.details} onEndProcess={onEndProcess} />}
@@ -52,14 +56,19 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
         <Field label={t.details.port} mono>
           <span className="flex items-center gap-1">
             {entry.localPort}
+            <CopyButton value={String(entry.localPort)} label={t.details.port} />
             <FavoriteButton port={entry.localPort} active={isFavorite} onToggle={onToggleFavorite} />
           </span>
         </Field>
         <Field label={t.details.protocol}>{PROTOCOL_LABELS[entry.protocol]}</Field>
-        <Field label={t.details.local} mono>
+        <Field label={t.details.local} mono copy={entry.localAddress}>
           {entry.localAddress}
         </Field>
-        <Field label={t.details.remote} mono>
+        <Field
+          label={t.details.remote}
+          mono
+          copy={entry.remoteAddress !== null ? `${entry.remoteAddress}:${entry.remotePort}` : undefined}
+        >
           {entry.remoteAddress !== null ? (
             `${entry.remoteAddress}:${entry.remotePort}`
           ) : (
@@ -99,7 +108,7 @@ function Lineage({
   const { commandLine, parent, descendants } = details;
   return (
     <>
-      <Field label={t.details.commandLine}>
+      <Field label={t.details.commandLine} copy={commandLine ?? undefined}>
         {commandLine ? (
           <span className="font-mono text-[12px] break-all select-text">{commandLine}</span>
         ) : (
@@ -162,11 +171,22 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Field({ label, mono, children }: { label: string; mono?: boolean; children: ReactNode }) {
+interface FieldProps {
+  label: string;
+  mono?: boolean;
+  /** When set, a copy-to-clipboard button for this value follows the content. */
+  copy?: string;
+  children: ReactNode;
+}
+
+function Field({ label, mono, copy, children }: FieldProps) {
   return (
     <>
       <dt className="text-muted">{label}</dt>
-      <dd className={`min-w-0 ${mono ? "font-mono text-[12px]" : ""}`}>{children}</dd>
+      <dd className={`min-w-0 ${mono ? "font-mono text-[12px]" : ""}`}>
+        {children}
+        {copy && <CopyButton value={copy} label={label} />}
+      </dd>
     </>
   );
 }
