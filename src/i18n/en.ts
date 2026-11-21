@@ -62,6 +62,8 @@ export const en = {
     allProcesses: "All processes",
     stateLabel: "State",
     allStates: "All states",
+    hideInactive: "Hide finished connections",
+    hideInactiveHint: "Hides TIME_WAIT and closed sockets, which are leftovers of connections that already ended.",
     columns: {
       port: "Port",
       protocol: "Protocol",

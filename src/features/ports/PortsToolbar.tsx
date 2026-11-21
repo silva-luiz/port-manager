@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import { RefreshButton } from "../../components/RefreshButton";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { TcpState } from "../../types/ports";
-import { EMPTY_FILTERS, hasActiveFilters, parsePort, type PortFilters } from "./portQuery";
+import { DEFAULT_FILTERS, hasActiveFilters, parsePort, type PortFilters } from "./portQuery";
 
 interface PortsToolbarProps {
   filters: PortFilters;
@@ -73,10 +73,20 @@ export function PortsToolbar({ filters, onChange, processNames, states, onRefres
         </select>
       </label>
 
+      <label className="flex h-8 cursor-pointer items-center gap-1.5 text-xs text-muted" title={t.ports.hideInactiveHint}>
+        <input
+          type="checkbox"
+          checked={filters.hideInactive}
+          onChange={(e) => set("hideInactive", e.target.checked)}
+          className="accent-accent"
+        />
+        {t.ports.hideInactive}
+      </label>
+
       {hasFilters && (
         <button
           type="button"
-          onClick={() => onChange(EMPTY_FILTERS)}
+          onClick={() => onChange(DEFAULT_FILTERS)}
           className="flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted hover:text-fg"
         >
           <X size={13} aria-hidden />

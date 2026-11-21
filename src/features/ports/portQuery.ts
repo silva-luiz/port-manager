@@ -7,12 +7,24 @@ export interface PortFilters {
   /** Raw text from the port input; applied only when it is a valid port. */
   port: string;
   state: TcpState | "";
+  /**
+   * Hide sockets the backend reports as not live (TIME_WAIT/CLOSED leftovers).
+   * Ignored when a specific state is chosen, so picking "Time wait" still works.
+   */
+  hideInactive: boolean;
 }
 
-export const EMPTY_FILTERS: PortFilters = { search: "", processName: "", port: "", state: "" };
+export const DEFAULT_FILTERS: PortFilters = {
+  search: "",
+  processName: "",
+  port: "",
+  state: "",
+  hideInactive: true,
+};
 
+/** True when anything differs from the defaults (which already hide inactive sockets). */
 export function hasActiveFilters(filters: PortFilters): boolean {
-  return (Object.keys(EMPTY_FILTERS) as (keyof PortFilters)[]).some((k) => filters[k] !== EMPTY_FILTERS[k]);
+  return (Object.keys(DEFAULT_FILTERS) as (keyof PortFilters)[]).some((k) => filters[k] !== DEFAULT_FILTERS[k]);
 }
 
 export type SortKey = "localPort" | "protocol" | "localAddress" | "processName" | "pid" | "state";
@@ -40,6 +52,7 @@ export function filterPorts(entries: PortEntry[], filters: PortFilters): PortEnt
   const port = parsePort(filters.port);
 
   return entries.filter((e) => {
+    if (filters.hideInactive && !filters.state && !e.live) return false;
     if (filters.processName && e.processName !== filters.processName) return false;
     if (filters.state && e.state !== filters.state) return false;
     if (port !== null && e.localPort !== port) return false;

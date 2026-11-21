@@ -8,7 +8,7 @@ import { DetailsPanel } from "../process/DetailsPanel";
 import { EndProcessDialog, type EndProcessTarget } from "../process/EndProcessDialog";
 import { TerminationNotice } from "../process/TerminationNotice";
 import {
-  EMPTY_FILTERS,
+  DEFAULT_FILTERS,
   distinctProcessNames,
   distinctStates,
   entryKey,
@@ -29,7 +29,7 @@ interface PortsPageProps {
 export function PortsPage({ ports, favorites }: PortsPageProps) {
   const { t, formatNumber, formatTime, describeError } = useI18n();
   const { snapshot, error, loading, refresh } = ports;
-  const [filters, setFilters] = useState<PortFilters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<PortFilters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOrder>({ key: "localPort", direction: "asc" });
   // Store the key, not the row, so the panel always shows the latest data.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -83,7 +83,7 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
           ) : visible.length === 0 ? (
             <p className="p-4 text-muted">
               {t.ports.noMatches}{" "}
-              <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="text-accent hover:underline">
+              <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="text-accent hover:underline">
                 {t.common.clearFilters}
               </button>
             </p>

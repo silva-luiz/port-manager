@@ -62,6 +62,8 @@ export const ptBR: Messages = {
     allProcesses: "Todos os processos",
     stateLabel: "Estado",
     allStates: "Todos os estados",
+    hideInactive: "Ocultar conexões encerradas",
+    hideInactiveHint: "Oculta sockets em TIME_WAIT e fechados, que são restos de conexões que já terminaram.",
     columns: {
       port: "Porta",
       protocol: "Protocolo",

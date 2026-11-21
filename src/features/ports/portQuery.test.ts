@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeEntry } from "../../test/fixtures";
 import {
-  EMPTY_FILTERS,
+  DEFAULT_FILTERS,
   distinctProcessNames,
   distinctStates,
   entryKey,
@@ -20,6 +20,9 @@ const rows = [
 
 const ports = (entries: { localPort: number }[]) => entries.map((e) => e.localPort);
 
+/** Filters that show everything, so each test isolates one criterion. */
+const ALL = { ...DEFAULT_FILTERS, hideInactive: false };
+
 describe("parsePort", () => {
   it("accepts 0–65535 with surrounding spaces", () => {
     expect(parsePort("1313")).toBe(1313);
@@ -35,20 +38,29 @@ describe("parsePort", () => {
 
 describe("filterPorts", () => {
   it("searches process names, PIDs, ports and addresses", () => {
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "HUGO" }))).toEqual([1313]);
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "35188" }))).toEqual([1313]);
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "10.0.0.9" }))).toEqual([443]);
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "vite" }))).toEqual([5000]);
+    expect(ports(filterPorts(rows, { ...ALL, search: "HUGO" }))).toEqual([1313]);
+    expect(ports(filterPorts(rows, { ...ALL, search: "35188" }))).toEqual([1313]);
+    expect(ports(filterPorts(rows, { ...ALL, search: "10.0.0.9" }))).toEqual([443]);
+    expect(ports(filterPorts(rows, { ...ALL, search: "vite" }))).toEqual([5000]);
   });
 
   it("filters by exact local port and ignores an invalid port", () => {
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, port: "80" }))).toEqual([80]);
-    expect(filterPorts(rows, { ...EMPTY_FILTERS, port: "abc" })).toHaveLength(rows.length);
+    expect(ports(filterPorts(rows, { ...ALL, port: "80" }))).toEqual([80]);
+    expect(filterPorts(rows, { ...ALL, port: "abc" })).toHaveLength(rows.length);
+  });
+
+  it("hides inactive sockets by default", () => {
+    expect(ports(filterPorts(rows, DEFAULT_FILTERS))).toEqual([5000, 1313, 443]);
+    expect(filterPorts(rows, ALL)).toHaveLength(rows.length);
+  });
+
+  it("lets an explicit state choice override hiding inactive sockets", () => {
+    expect(ports(filterPorts(rows, { ...DEFAULT_FILTERS, state: "timeWait" }))).toEqual([80]);
   });
 
   it("filters by process and state together", () => {
-    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, state: "established" }))).toEqual([443]);
-    expect(filterPorts(rows, { ...EMPTY_FILTERS, processName: "hugo.exe", state: "established" })).toEqual([]);
+    expect(ports(filterPorts(rows, { ...ALL, state: "established" }))).toEqual([443]);
+    expect(filterPorts(rows, { ...ALL, processName: "hugo.exe", state: "established" })).toEqual([]);
   });
 });
 
@@ -82,8 +94,9 @@ describe("helpers", () => {
   });
 
   it("detects active filters", () => {
-    expect(hasActiveFilters(EMPTY_FILTERS)).toBe(false);
-    expect(hasActiveFilters({ ...EMPTY_FILTERS, port: "80" })).toBe(true);
+    expect(hasActiveFilters(DEFAULT_FILTERS)).toBe(false);
+    expect(hasActiveFilters(ALL)).toBe(true);
+    expect(hasActiveFilters({ ...ALL, port: "80" })).toBe(true);
   });
 
   it("gives a socket the same key across refreshes", () => {
