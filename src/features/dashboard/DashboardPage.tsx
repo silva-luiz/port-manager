@@ -1,18 +1,11 @@
 import { Notice } from "../../components/Notice";
-import { HealthPanel } from "../../components/health/HealthPanel";
 import { RefreshButton } from "../../components/RefreshButton";
-import type { HealthState } from "../../hooks/useHealthCheck";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
 import { useI18n } from "../../i18n/I18nProvider";
+import { ListeningPanel } from "./ListeningPanel";
 import { SummaryStrip } from "./SummaryStrip";
 
-interface DashboardPageProps {
-  ports: PortSnapshotState;
-  health: HealthState;
-  onCheckHealth: () => void;
-}
-
-export function DashboardPage({ ports, health, onCheckHealth }: DashboardPageProps) {
+export function DashboardPage({ ports }: { ports: PortSnapshotState }) {
   const { t, describeError } = useI18n();
   return (
     <div className="flex max-w-5xl flex-col gap-5">
@@ -22,7 +15,7 @@ export function DashboardPage({ ports, health, onCheckHealth }: DashboardPagePro
       </div>
       {ports.error && <Notice>{t.ports.listError(describeError(ports.error))}</Notice>}
       <SummaryStrip snapshot={ports.snapshot} />
-      <HealthPanel state={health} onCheck={onCheckHealth} />
+      <ListeningPanel snapshot={ports.snapshot} />
     </div>
   );
 }

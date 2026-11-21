@@ -9,8 +9,8 @@ Built with Tauri 2 (Rust) and React + TypeScript. The initial target is Windows 
 
 Early development. What works today:
 
-- Dashboard with active ports, listening ports, established connections, process count and
-  last refresh time.
+- Dashboard with active ports, listening ports, established connections, process count, last
+  refresh time and the listening ports grouped by process.
 - Ports table listing every IPv4/IPv6 TCP socket with its owning process and command line
   (so several `node.exe` can be told apart): search, filters by process, port and state,
   sortable columns, finished connections (TIME_WAIT) hidden by default, and manual or optional
@@ -32,7 +32,7 @@ Early development. What works today:
   window.
 - Keyboard shortcuts: `Ctrl+F` search ports, `F5`/`Ctrl+R` refresh, `Esc` close the details
   panel.
-- Backend health check.
+- Backend health check (under Settings).
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets
 the favorites and settings. The window size, position and maximized state are remembered in

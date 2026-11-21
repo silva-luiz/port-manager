@@ -1,10 +1,17 @@
 import { useState, type ReactNode } from "react";
 import { Notice } from "../../components/Notice";
+import { HealthPanel } from "../../components/health/HealthPanel";
+import type { HealthState } from "../../hooks/useHealthCheck";
 import { LOCALES, LOCALE_NAMES, useI18n } from "../../i18n/I18nProvider";
 import { useSettings } from "../../settings/SettingsProvider";
 import type { AppError } from "../../types/error";
 
-export function SettingsPage() {
+interface SettingsPageProps {
+  health: HealthState;
+  onCheckHealth: () => void;
+}
+
+export function SettingsPage({ health, onCheckHealth }: SettingsPageProps) {
   const { t, locale, setLocale, describeError } = useI18n();
   const { settings, setAutoRefresh, setCloseToTray } = useSettings();
   const [error, setError] = useState<AppError | null>(null);
@@ -57,6 +64,8 @@ export function SettingsPage() {
       </Group>
 
       {error && <Notice onDismiss={() => setError(null)}>{t.settings.saveError(describeError(error))}</Notice>}
+
+      <HealthPanel state={health} onCheck={onCheckHealth} />
     </div>
   );
 }

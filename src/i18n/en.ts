@@ -39,6 +39,8 @@ export const en = {
   },
   dashboard: {
     intro: "TCP sockets on this machine, read from the Windows connection table.",
+    listeningTitle: "Listening ports by process",
+    listeningEmpty: "No process is listening on a TCP port.",
     stats: {
       activePorts: "Active ports",
       activePortsHint: "Distinct local TCP ports with a live socket (excludes time wait)",

@@ -38,6 +38,8 @@ export const ptBR: Messages = {
   },
   dashboard: {
     intro: "Sockets TCP desta máquina, lidos da tabela de conexões do Windows.",
+    listeningTitle: "Portas escutando por processo",
+    listeningEmpty: "Nenhum processo está escutando em uma porta TCP.",
     stats: {
       activePorts: "Portas ativas",
       activePortsHint: "Portas TCP locais distintas com um socket ativo (exclui time wait)",

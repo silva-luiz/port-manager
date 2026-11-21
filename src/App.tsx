@@ -47,11 +47,11 @@ export default function App() {
         </Header>
         <main className="min-h-0 flex-1 overflow-auto p-5">
           {view === "dashboard" && (
-            <DashboardPage ports={ports} health={health.state} onCheckHealth={health.check} />
+            <DashboardPage ports={ports} />
           )}
           {view === "ports" && <PortsPage ports={ports} favorites={favorites} />}
           {view === "favorites" && <FavoritesPage favorites={favorites} ports={ports} />}
-          {view === "settings" && <SettingsPage />}
+          {view === "settings" && <SettingsPage health={health.state} onCheckHealth={health.check} />}
         </main>
       </div>
     </div>
