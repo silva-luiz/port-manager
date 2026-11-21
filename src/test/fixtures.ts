@@ -12,6 +12,7 @@ export function makeEntry(overrides: Partial<PortEntry> = {}): PortEntry {
     live: true,
     pid: 1000,
     processName: "node.exe",
+    commandLine: null,
     ...overrides,
   };
 }

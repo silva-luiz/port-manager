@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import type { TerminationOutcome } from "../../types/process";
 import { DetailsPanel } from "../process/DetailsPanel";
 import { EndProcessDialog, type EndProcessTarget } from "../process/EndProcessDialog";
+import { TerminationNotice } from "../process/TerminationNotice";
 import {
   EMPTY_FILTERS,
   distinctProcessNames,
@@ -66,11 +67,7 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
         refreshing={loading}
       />
 
-      {ended && (
-        <Notice tone="ok" onDismiss={() => setEnded(null)}>
-          {ended.exited ? t.ports.ended(ended.name, ended.pid) : t.ports.stillRunning(ended.name, ended.pid)}
-        </Notice>
-      )}
+      {ended && <TerminationNotice outcome={ended} onDismiss={() => setEnded(null)} />}
       {error && <Notice>{t.ports.listError(describeError(error))}</Notice>}
       {favorites.error && (
         <Notice onDismiss={favorites.clearError}>{t.favorites.updateError(describeError(favorites.error))}</Notice>

@@ -53,7 +53,7 @@ export const en = {
     listError: (error: string) => `Couldn't read the port list: ${error}`,
     processLookupWarning: (error: string) => `Ports were read, but process names are unavailable: ${error}`,
     searchLabel: "Search ports, addresses, processes or PIDs",
-    searchPlaceholder: "Search port, address, process or PID",
+    searchPlaceholder: "Search port, address, process, PID or command",
     portLabel: "Local port",
     portPlaceholder: "Port",
     portInvalid: "Enter a port between 0 and 65535",
@@ -85,6 +85,10 @@ export const en = {
     endProcessTitle: (name: string) => `End ${name}…`,
     endUnavailable: "No identifiable process to end",
     ended: (name: string, pid: number) => `Ended ${name} (PID ${pid}).`,
+    endedWithChildren: (name: string, pid: number, count: number) =>
+      `Ended ${name} (PID ${pid}) and ${count} child ${count === 1 ? "process" : "processes"}.`,
+    childFailures: (count: number) =>
+      `${count} child ${count === 1 ? "process" : "processes"} could not be ended:`,
     stillRunning: (name: string, pid: number) =>
       `Asked ${name} (PID ${pid}) to stop, but it was still running after 3 seconds.`,
   },
@@ -111,6 +115,11 @@ export const en = {
     name: "Name",
     pid: "PID",
     executable: "Executable",
+    commandLine: "Command line",
+    parent: "Started by",
+    children: "Child processes",
+    endParent: "End…",
+    endParentTitle: (name: string) => `End ${name}, the process that started this one`,
     port: "Port",
     protocol: "Protocol",
     local: "Local",
@@ -128,6 +137,11 @@ export const en = {
     pid: "PID",
     warning:
       "The process stops immediately, without a chance to save its work. Anything that depends on it, such as a dev server, an editor or a database, may be interrupted.",
+    includeChildren: (count: number) =>
+      count === 1 ? "Also end its child process" : `Also end its ${count} child processes`,
+    childrenHint:
+      "Use this when a supervisor such as npm, a file watcher or an auto-reloader would otherwise keep them running or restart them.",
+    andMore: (count: number) => `and ${count} more`,
     confirm: "End process",
     ending: "Ending…",
   },

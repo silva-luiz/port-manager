@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Info, Power } from "lucide-react";
 import { FavoriteButton } from "../../components/FavoriteButton";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { Messages } from "../../i18n/en";
+import { commandArgs } from "../../lib/commandLine";
 import { PROTOCOL_LABELS } from "../../lib/labels";
 import type { PortEntry } from "../../types/ports";
 import type { EndProcessTarget } from "../process/EndProcessDialog";
@@ -102,9 +103,10 @@ export function PortsTable({
               </td>
               <td
                 className="truncate px-3"
-                title={e.processName ?? (e.pid === null ? t.ports.noOwner : t.ports.nameUnavailable)}
+                title={e.commandLine ?? e.processName ?? (e.pid === null ? t.ports.noOwner : t.ports.nameUnavailable)}
               >
                 {e.processName ?? NONE}
+                {e.commandLine && <span className="ml-2 font-mono text-[11px] text-muted">{commandArgs(e.commandLine)}</span>}
               </td>
               <td className="px-3 font-mono text-[12px] tabular-nums text-muted">{e.pid ?? NONE}</td>
               <td className="px-3">

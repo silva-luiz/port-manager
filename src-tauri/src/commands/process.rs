@@ -10,10 +10,12 @@ pub async fn process_details(pid: u32) -> Result<ProcessDetails, AppError> {
 
 /// Ends a process the user explicitly confirmed in the UI. `expected_name` is
 /// the name shown in the confirmation dialog and is re-checked against the PID.
+/// `include_children` reflects the dialog's checkbox.
 #[tauri::command]
 pub async fn terminate_process(
     pid: u32,
     expected_name: String,
+    include_children: bool,
 ) -> Result<TerminationOutcome, AppError> {
-    run_blocking(move || termination::terminate(pid, &expected_name)).await
+    run_blocking(move || termination::terminate(pid, &expected_name, include_children)).await
 }

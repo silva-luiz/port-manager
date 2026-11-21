@@ -5,8 +5,10 @@ import { useProcessDetails, type ProcessDetailsState } from "../../hooks/useProc
 import { useI18n } from "../../i18n/I18nProvider";
 import { PROTOCOL_LABELS } from "../../lib/labels";
 import type { PortEntry } from "../../types/ports";
+import type { ProcessDetails } from "../../types/process";
 import { StateBadge } from "../ports/StateBadge";
 import type { EndProcessTarget } from "./EndProcessDialog";
+import { ProcessList } from "./ProcessList";
 
 interface DetailsPanelProps {
   entry: PortEntry;
@@ -43,6 +45,7 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
         <Field label={t.details.executable}>
           <ExecutablePath entry={entry} state={details} />
         </Field>
+        {details.phase === "loaded" && <Lineage details={details.details} onEndProcess={onEndProcess} />}
       </Section>
 
       <Section title={t.details.connection}>
@@ -81,6 +84,51 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
         </button>
       </div>
     </aside>
+  );
+}
+
+/** Command line, the parent process (which can be ended from here) and children. */
+function Lineage({
+  details,
+  onEndProcess,
+}: {
+  details: ProcessDetails;
+  onEndProcess: (target: EndProcessTarget) => void;
+}) {
+  const { t } = useI18n();
+  const { commandLine, parent, descendants } = details;
+  return (
+    <>
+      <Field label={t.details.commandLine}>
+        {commandLine ? (
+          <span className="font-mono text-[12px] break-all select-text">{commandLine}</span>
+        ) : (
+          <Missing>{t.common.none}</Missing>
+        )}
+      </Field>
+      <Field label={t.details.parent}>
+        {parent ? (
+          <span className="flex items-baseline gap-2">
+            <span className="min-w-0 truncate">
+              {parent.name} <span className="font-mono text-[12px] text-muted">({parent.pid})</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => onEndProcess(parent)}
+              title={t.details.endParentTitle(parent.name)}
+              className="shrink-0 text-xs text-danger hover:underline"
+            >
+              {t.details.endParent}
+            </button>
+          </span>
+        ) : (
+          <Missing>{t.common.none}</Missing>
+        )}
+      </Field>
+      <Field label={t.details.children}>
+        {descendants.length > 0 ? <ProcessList processes={descendants} /> : <Missing>{t.common.none}</Missing>}
+      </Field>
+    </>
   );
 }
 

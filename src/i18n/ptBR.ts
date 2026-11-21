@@ -53,7 +53,7 @@ export const ptBR: Messages = {
     processLookupWarning: (error) =>
       `As portas foram lidas, mas os nomes dos processos não estão disponíveis: ${error}`,
     searchLabel: "Buscar portas, endereços, processos ou PIDs",
-    searchPlaceholder: "Buscar porta, endereço, processo ou PID",
+    searchPlaceholder: "Buscar porta, endereço, processo, PID ou comando",
     portLabel: "Porta local",
     portPlaceholder: "Porta",
     portInvalid: "Informe uma porta entre 0 e 65535",
@@ -85,6 +85,14 @@ export const ptBR: Messages = {
     endProcessTitle: (name) => `Encerrar ${name}…`,
     endUnavailable: "Nenhum processo identificável para encerrar",
     ended: (name, pid) => `${name} (PID ${pid}) foi encerrado.`,
+    endedWithChildren: (name, pid, count) =>
+      count === 1
+        ? `${name} (PID ${pid}) e 1 processo filho foram encerrados.`
+        : `${name} (PID ${pid}) e ${count} processos filhos foram encerrados.`,
+    childFailures: (count) =>
+      count === 1
+        ? "1 processo filho não pôde ser encerrado:"
+        : `${count} processos filhos não puderam ser encerrados:`,
     stillRunning: (name, pid) =>
       `Foi solicitado o encerramento de ${name} (PID ${pid}), mas ele continuava em execução após 3 segundos.`,
   },
@@ -111,6 +119,11 @@ export const ptBR: Messages = {
     name: "Nome",
     pid: "PID",
     executable: "Executável",
+    commandLine: "Linha de comando",
+    parent: "Iniciado por",
+    children: "Processos filhos",
+    endParent: "Encerrar…",
+    endParentTitle: (name) => `Encerrar ${name}, o processo que iniciou este`,
     port: "Porta",
     protocol: "Protocolo",
     local: "Local",
@@ -128,6 +141,11 @@ export const ptBR: Messages = {
     pid: "PID",
     warning:
       "O processo é interrompido imediatamente, sem chance de salvar o trabalho. Tudo o que depende dele, como um servidor de desenvolvimento, um editor ou um banco de dados, pode ser interrompido.",
+    includeChildren: (count) =>
+      count === 1 ? "Também encerrar o processo filho" : `Também encerrar os ${count} processos filhos`,
+    childrenHint:
+      "Use quando um supervisor, como o npm, um file watcher ou um auto-reloader, os manteria em execução ou os reiniciaria.",
+    andMore: (count) => `e mais ${count}`,
     confirm: "Encerrar processo",
     ending: "Encerrando…",
   },

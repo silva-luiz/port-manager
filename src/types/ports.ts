@@ -31,6 +31,8 @@ export interface PortEntry {
   live: boolean;
   pid: number | null;
   processName: string | null;
+  /** Full command line; null when Windows won't reveal it. */
+  commandLine: string | null;
 }
 
 /** Mirrors `PortSummary` in src-tauri/src/ports.rs. */

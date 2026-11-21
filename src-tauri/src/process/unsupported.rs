@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use super::ProcessEntry;
 use crate::error::AppError;
 
 fn unsupported() -> AppError {
@@ -10,10 +11,18 @@ fn unsupported() -> AppError {
     }
 }
 
-pub fn process_names() -> Result<HashMap<u32, String>, AppError> {
+pub fn process_table() -> Result<HashMap<u32, ProcessEntry>, AppError> {
     Err(unsupported())
 }
 
 pub fn executable_path(_pid: u32) -> Result<String, AppError> {
     Err(unsupported())
+}
+
+pub fn command_line(_pid: u32) -> Result<String, AppError> {
+    Err(unsupported())
+}
+
+pub fn creation_time(_pid: u32) -> Option<u64> {
+    None
 }

@@ -114,11 +114,18 @@ port-manager/
 ## Process details and termination
 
 - `process_details(pid)` returns the name (ToolHelp snapshot) and, when Windows allows opening
-  the process with `PROCESS_QUERY_LIMITED_INFORMATION`, its executable path. A refused path
-  comes back as `pathUnavailableReason` instead of an error; a vanished process is
-  `processNotFound`.
-- `terminate_process(pid, expectedName)` is only called from the confirmation dialog
-  (`EndProcessDialog`). The backend then:
+  the process with `PROCESS_QUERY_LIMITED_INFORMATION`, its executable path and command line
+  (`NtQueryInformationProcess` / `ProcessCommandLineInformation`). A refused path comes back
+  as `pathError` instead of failing the call; a vanished process is `processNotFound`.
+- It also returns the parent process and all descendants. Windows keeps a process's parent
+  PID after the parent exits and may reuse that PID, so `process::descendants` only accepts a
+  parent/child link when the parent's creation time (`GetProcessTimes`) is not later than the
+  child's. Processes whose creation time can't be read are left out rather than guessed.
+- `list_ports` includes each owning process's command line (one lookup per PID), so the table
+  can tell several `node.exe` apart and search can match script names.
+- `terminate_process(pid, expectedName, includeChildren)` is only called from the
+  confirmation dialog (`EndProcessDialog`). Ending children is opt-in; the dialog lists them.
+  The backend then:
   1. rejects PID 0 and the app's own PID;
   2. re-reads the process name and refuses if it no longer matches `expectedName`
      (protects against PID reuse between refresh and click);
@@ -126,6 +133,10 @@ port-manager/
      reports as critical (`protectedProcess`);
   4. calls `TerminateProcess` and waits up to 3 s for exit. Access denied becomes
      `permissionDenied` with an explanation; the app never elevates.
+  5. with `includeChildren`: vets the main process first (protection + permission), computes
+     the full descendant set, ends the main process, then the descendants parents-first, so a
+     supervisor (npm, watcher, auto-reloader) can't respawn them. A child that can't be ended
+     is reported in `children[].error`; it never aborts the operation.
 - All commands touching the OS run via `spawn_blocking` so the UI thread never waits on them.
 
 ## Local storage

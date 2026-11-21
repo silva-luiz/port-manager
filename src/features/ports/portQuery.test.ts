@@ -12,7 +12,7 @@ import {
 } from "./portQuery";
 
 const rows = [
-  makeEntry({ localPort: 5000, processName: "node.exe", pid: 10 }),
+  makeEntry({ localPort: 5000, processName: "node.exe", pid: 10, commandLine: "node node_modules/vite/bin/vite.js" }),
   makeEntry({ localPort: 1313, processName: "hugo.exe", pid: 35188 }),
   makeEntry({ localPort: 80, processName: null, pid: null, state: "timeWait", live: false }),
   makeEntry({ localPort: 443, processName: "System", pid: 4, state: "established", remoteAddress: "10.0.0.9", remotePort: 51000 }),
@@ -38,6 +38,7 @@ describe("filterPorts", () => {
     expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "HUGO" }))).toEqual([1313]);
     expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "35188" }))).toEqual([1313]);
     expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "10.0.0.9" }))).toEqual([443]);
+    expect(ports(filterPorts(rows, { ...EMPTY_FILTERS, search: "vite" }))).toEqual([5000]);
   });
 
   it("filters by exact local port and ignores an invalid port", () => {

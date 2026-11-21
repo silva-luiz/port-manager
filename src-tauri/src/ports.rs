@@ -24,6 +24,8 @@ pub struct PortEntry {
     pub pid: Option<u32>,
     /// `None` when there is no owning process or it exited before lookup.
     pub process_name: Option<String>,
+    /// `None` when unreadable (system or other users' processes).
+    pub command_line: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -57,7 +59,14 @@ pub fn snapshot() -> Result<PortSnapshot, AppError> {
         Err(e) => (HashMap::new(), Some(e)),
     };
 
-    let entries = build_entries(connections, &names);
+    // One lookup per process, not per socket.
+    let owners: HashSet<u32> = connections.iter().filter_map(|c| c.pid).collect();
+    let command_lines: HashMap<u32, String> = owners
+        .into_iter()
+        .filter_map(|pid| process::command_line(pid).ok().map(|cmd| (pid, cmd)))
+        .collect();
+
+    let entries = build_entries(connections, &names, &command_lines);
     Ok(PortSnapshot {
         summary: summarize(&entries),
         entries,
@@ -66,7 +75,11 @@ pub fn snapshot() -> Result<PortSnapshot, AppError> {
     })
 }
 
-fn build_entries(connections: Vec<TcpConnection>, names: &HashMap<u32, String>) -> Vec<PortEntry> {
+fn build_entries(
+    connections: Vec<TcpConnection>,
+    names: &HashMap<u32, String>,
+    command_lines: &HashMap<u32, String>,
+) -> Vec<PortEntry> {
     connections
         .into_iter()
         .map(|c| PortEntry {
@@ -78,6 +91,7 @@ fn build_entries(connections: Vec<TcpConnection>, names: &HashMap<u32, String>) 
             state: c.state,
             live: c.state.is_live(),
             process_name: c.pid.and_then(|pid| names.get(&pid).cloned()),
+            command_line: c.pid.and_then(|pid| command_lines.get(&pid).cloned()),
             pid: c.pid,
         })
         .collect()
@@ -133,6 +147,7 @@ mod tests {
                 conn(Protocol::Tcp, "127.0.0.1:6000", TcpState::TimeWait, None),
             ],
             &names,
+            &HashMap::new(),
         );
         assert_eq!(entries[0].process_name.as_deref(), Some("hugo.exe"));
         assert_eq!(entries[1].process_name, None, "PID exited before lookup");
@@ -162,6 +177,7 @@ mod tests {
                 conn(Protocol::Tcp, "127.0.0.1:6000", TcpState::TimeWait, None),
             ],
             &HashMap::new(),
+            &HashMap::new(),
         );
         assert_eq!(
             summarize(&entries),
@@ -184,6 +200,7 @@ mod tests {
                 Some(7),
             )],
             &HashMap::new(),
+            &HashMap::from([(7, "node server.js".to_string())]),
         );
         let json = serde_json::to_value(&entries[0]).unwrap();
         assert_eq!(json["localPort"], 8080);
@@ -192,5 +209,6 @@ mod tests {
         assert_eq!(json["state"], "listen");
         assert_eq!(json["live"], true);
         assert!(json["processName"].is_null());
+        assert_eq!(json["commandLine"], "node server.js");
     }
 }

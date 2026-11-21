@@ -44,7 +44,7 @@ export function filterPorts(entries: PortEntry[], filters: PortFilters): PortEnt
     if (filters.state && e.state !== filters.state) return false;
     if (port !== null && e.localPort !== port) return false;
     if (!search) return true;
-    return [e.localPort, e.localAddress, e.remoteAddress, e.remotePort, e.processName, e.pid].some(
+    return [e.localPort, e.localAddress, e.remoteAddress, e.remotePort, e.processName, e.pid, e.commandLine].some(
       (v) => v !== null && String(v).toLowerCase().includes(search),
     );
   });

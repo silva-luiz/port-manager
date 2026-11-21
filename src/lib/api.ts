@@ -15,8 +15,8 @@ export const api = {
   listPorts: () => invoke<PortSnapshot>("list_ports"),
   processDetails: (pid: number) => invoke<ProcessDetails>("process_details", { pid }),
   /** Only call after the user confirmed in the UI; the backend re-validates the name. */
-  terminateProcess: (pid: number, expectedName: string) =>
-    invoke<TerminationOutcome>("terminate_process", { pid, expectedName }),
+  terminateProcess: (pid: number, expectedName: string, includeChildren: boolean) =>
+    invoke<TerminationOutcome>("terminate_process", { pid, expectedName, includeChildren }),
   listFavorites: () => invoke<Favorite[]>("list_favorites"),
   addFavorite: (port: number) => invoke<Favorite[]>("add_favorite", { port }),
   removeFavorite: (port: number) => invoke<Favorite[]>("remove_favorite", { port }),
