@@ -30,6 +30,8 @@ Early development. What works today:
   notification area when the window is closed (so favorite alerts keep working). Choices are
   remembered. Only one copy of the app runs at a time; opening it again shows the existing
   window.
+- Keyboard shortcuts: `Ctrl+F` search ports, `F5`/`Ctrl+R` refresh, `Esc` close the details
+  panel.
 - Backend health check.
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets

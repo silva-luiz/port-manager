@@ -9,8 +9,10 @@ import { SettingsPage } from "./features/settings/SettingsPage";
 import { useFavoriteAlerts } from "./hooks/useFavoriteAlerts";
 import { useFavorites } from "./hooks/useFavorites";
 import { useHealthCheck } from "./hooks/useHealthCheck";
+import { useShortcuts } from "./hooks/useShortcuts";
 import { usePortSnapshot } from "./hooks/usePortSnapshot";
 import { useI18n } from "./i18n/I18nProvider";
+import { SEARCH_INPUT_ID } from "./lib/shortcuts";
 import { useSettings } from "./settings/SettingsProvider";
 
 export default function App() {
@@ -23,6 +25,18 @@ export default function App() {
   const favorites = useFavorites();
   // A favorite changed while alerts are on: bring the views up to date quietly.
   useFavoriteAlerts(() => void ports.refresh({ background: true }));
+  useShortcuts({
+    refresh: () => void ports.refresh(),
+    search: () => {
+      setView("ports");
+      // Wait for the Ports view to render before focusing its search box.
+      requestAnimationFrame(() => {
+        const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
+        input?.focus();
+        input?.select();
+      });
+    },
+  });
 
   return (
     <div className="flex h-full">

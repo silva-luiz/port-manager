@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Notice } from "../../components/Notice";
 import type { FavoritesState } from "../../hooks/useFavorites";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
+import { useShortcuts } from "../../hooks/useShortcuts";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { TerminationOutcome } from "../../types/process";
 import { DetailsPanel } from "../process/DetailsPanel";
@@ -45,6 +46,8 @@ export function PortsPage({ ports, favorites }: PortsPageProps) {
   const processNames = useMemo(() => distinctProcessNames(entries), [entries]);
   const states = useMemo(() => distinctStates(entries), [entries]);
   const visible = useMemo(() => sortPorts(filterPorts(entries, filters), sort), [entries, filters, sort]);
+
+  useShortcuts({ close: () => setSelectedKey(null) });
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, direction: s.key === key && s.direction === "asc" ? "desc" : "asc" }));

@@ -18,7 +18,7 @@ export function DashboardPage({ ports, health, onCheckHealth }: DashboardPagePro
     <div className="flex max-w-5xl flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
         <p className="text-muted">{t.dashboard.intro}</p>
-        <RefreshButton onClick={() => void ports.refresh()} busy={ports.loading} />
+        <RefreshButton onClick={() => void ports.refresh()} busy={ports.loading} shortcut="F5" />
       </div>
       {ports.error && <Notice>{t.ports.listError(describeError(ports.error))}</Notice>}
       <SummaryStrip snapshot={ports.snapshot} />

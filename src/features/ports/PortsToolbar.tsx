@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { RefreshButton } from "../../components/RefreshButton";
+import { SEARCH_INPUT_ID } from "../../lib/shortcuts";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { TcpState } from "../../types/ports";
 import { DEFAULT_FILTERS, hasActiveFilters, parsePort, type PortFilters } from "./portQuery";
@@ -28,7 +29,9 @@ export function PortsToolbar({ filters, onChange, processNames, states, onRefres
         <span className="sr-only">{t.ports.searchLabel}</span>
         <Search size={14} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted" aria-hidden />
         <input
+          id={SEARCH_INPUT_ID}
           type="search"
+          title="Ctrl+F"
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           placeholder={t.ports.searchPlaceholder}
@@ -95,7 +98,7 @@ export function PortsToolbar({ filters, onChange, processNames, states, onRefres
       )}
 
       <div className="ml-auto">
-        <RefreshButton onClick={onRefresh} busy={refreshing} />
+        <RefreshButton onClick={onRefresh} busy={refreshing} shortcut="F5" />
       </div>
     </div>
   );
