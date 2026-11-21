@@ -77,6 +77,10 @@ in tests.
 - Icons come from `lucide-react`.
 - Pure logic (filtering, sorting, joins, formatting) lives in plain `.ts` modules with a
   sibling `*.test.ts`. Shared test data builders are in `src/test/fixtures.ts`.
+- Component tests (`*.test.tsx`) start with `// @vitest-environment jsdom`, mock the
+  `lib/api` module, and render through `renderWithProviders` (`src/test/render.tsx`), which
+  uses the real Settings and I18n providers. Query by role and accessible name, as a user
+  would; use `findBy*` for anything that appears after an effect.
 - Never re-derive a rule the backend already computes (e.g. use `entry.live`, not a
   list of states).
 
