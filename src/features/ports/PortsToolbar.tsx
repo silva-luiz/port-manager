@@ -2,14 +2,14 @@ import { Search, X } from "lucide-react";
 import { RefreshButton } from "../../components/RefreshButton";
 import { SEARCH_INPUT_ID } from "../../lib/shortcuts";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { TcpState } from "../../types/ports";
+import type { SocketState } from "../../types/ports";
 import { DEFAULT_FILTERS, hasActiveFilters, parsePort, type PortFilters } from "./portQuery";
 
 interface PortsToolbarProps {
   filters: PortFilters;
   onChange: (filters: PortFilters) => void;
   processNames: string[];
-  states: TcpState[];
+  states: SocketState[];
   onRefresh: () => void;
   refreshing: boolean;
 }
@@ -65,8 +65,21 @@ export function PortsToolbar({ filters, onChange, processNames, states, onRefres
       </label>
 
       <label>
+        <span className="sr-only">{t.ports.protocolLabel}</span>
+        <select
+          value={filters.protocol}
+          onChange={(e) => set("protocol", e.target.value as PortFilters["protocol"])}
+          className={FIELD}
+        >
+          <option value="">{t.ports.allProtocols}</option>
+          <option value="tcp">TCP</option>
+          <option value="udp">UDP</option>
+        </select>
+      </label>
+
+      <label>
         <span className="sr-only">{t.ports.stateLabel}</span>
-        <select value={filters.state} onChange={(e) => set("state", e.target.value as TcpState | "")} className={FIELD}>
+        <select value={filters.state} onChange={(e) => set("state", e.target.value as SocketState | "")} className={FIELD}>
           <option value="">{t.ports.allStates}</option>
           {states.map((state) => (
             <option key={state} value={state}>

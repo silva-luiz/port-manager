@@ -37,7 +37,7 @@ export const ptBR: Messages = {
     checkedAt: "Verificado às",
   },
   dashboard: {
-    intro: "Sockets TCP desta máquina, lidos da tabela de conexões do Windows.",
+    intro: "Sockets TCP e UDP desta máquina, lidos das tabelas de conexões do Windows.",
     listeningTitle: "Portas escutando por processo",
     listeningEmpty: "Nenhum processo está escutando em uma porta TCP.",
     stats: {
@@ -67,6 +67,8 @@ export const ptBR: Messages = {
     allProcesses: "Todos os processos",
     stateLabel: "Estado",
     allStates: "Todos os estados",
+    protocolLabel: "Protocolo",
+    allProtocols: "Todos os protocolos",
     hideInactive: "Ocultar conexões encerradas",
     hideInactiveHint: "Oculta sockets em TIME_WAIT e fechados, que são restos de conexões que já terminaram.",
     columns: {
@@ -116,6 +118,7 @@ export const ptBR: Messages = {
     lastAck: "Último ACK",
     timeWait: "Time wait",
     deleteTcb: "Delete TCB",
+    bound: "Vinculado",
     unknown: "Desconhecido",
   },
   details: {

@@ -1,10 +1,10 @@
 import type { Favorite } from "../../types/favorites";
-import type { PortEntry, TcpState } from "../../types/ports";
+import type { PortEntry, SocketState } from "../../types/ports";
 
 export interface PortOwner {
   pid: number | null;
   processName: string | null;
-  states: TcpState[];
+  states: SocketState[];
 }
 
 export interface FavoriteUsage {

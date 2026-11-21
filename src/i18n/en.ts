@@ -38,7 +38,7 @@ export const en = {
     checkedAt: "Checked at",
   },
   dashboard: {
-    intro: "TCP sockets on this machine, read from the Windows connection table.",
+    intro: "TCP and UDP sockets on this machine, read from the Windows connection tables.",
     listeningTitle: "Listening ports by process",
     listeningEmpty: "No process is listening on a TCP port.",
     stats: {
@@ -67,6 +67,8 @@ export const en = {
     allProcesses: "All processes",
     stateLabel: "State",
     allStates: "All states",
+    protocolLabel: "Protocol",
+    allProtocols: "All protocols",
     hideInactive: "Hide finished connections",
     hideInactiveHint: "Hides TIME_WAIT and closed sockets, which are leftovers of connections that already ended.",
     columns: {
@@ -112,6 +114,7 @@ export const en = {
     lastAck: "Last ACK",
     timeWait: "Time wait",
     deleteTcb: "Delete TCB",
+    bound: "Bound",
     unknown: "Unknown",
   },
   details: {

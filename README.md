@@ -11,9 +11,9 @@ Early development. What works today:
 
 - Dashboard with active ports, listening ports, established connections, process count, last
   refresh time and the listening ports grouped by process.
-- Ports table listing every IPv4/IPv6 TCP socket with its owning process and command line
+- Ports table listing every IPv4/IPv6 TCP and UDP socket with its owning process and command line
   (so several `node.exe` can be told apart): search, filters by process, port and state,
-  sortable columns, finished connections (TIME_WAIT) hidden by default, and manual or optional
+  a protocol filter, sortable columns, finished connections (TIME_WAIT) hidden by default, and manual or optional
   automatic refresh.
 - Process details panel: name, PID, executable path and command line when Windows allows it,
   the parent process, child processes and connection info.

@@ -1,10 +1,10 @@
 import type { AppError } from "./error";
 
 /** Mirrors `Protocol` in src-tauri/src/network/mod.rs. */
-export type Protocol = "tcp" | "tcp6";
+export type Protocol = "tcp" | "tcp6" | "udp" | "udp6";
 
-/** Mirrors `TcpState` in src-tauri/src/network/mod.rs. */
-export type TcpState =
+/** Mirrors `SocketState` in src-tauri/src/network/mod.rs. */
+export type SocketState =
   | "closed"
   | "listen"
   | "synSent"
@@ -17,6 +17,8 @@ export type TcpState =
   | "lastAck"
   | "timeWait"
   | "deleteTcb"
+  /** UDP has no connection state; a bound UDP socket is in use. */
+  | "bound"
   | "unknown";
 
 /** Mirrors `PortEntry` in src-tauri/src/ports.rs. */
@@ -26,7 +28,7 @@ export interface PortEntry {
   localPort: number;
   remoteAddress: string | null;
   remotePort: number | null;
-  state: TcpState;
+  state: SocketState;
   /** Socket still counts as in use (computed by the backend; never re-derive it). */
   live: boolean;
   pid: number | null;

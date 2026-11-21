@@ -14,7 +14,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::favorites;
-use crate::network::{self, TcpConnection, TcpState};
+use crate::network::{self, NetSocket, SocketState};
 use crate::process;
 use crate::settings;
 use crate::storage::Database;
@@ -64,7 +64,7 @@ fn tick(app: &AppHandle, baseline: Option<HashMap<u16, Usage>>) -> Option<HashMa
     if ports.is_empty() {
         return None;
     }
-    let connections = match network::tcp_connections() {
+    let connections = match network::sockets() {
         Ok(connections) => connections,
         Err(e) => {
             log::warn!("favorite port check skipped: {e}");
@@ -99,17 +99,17 @@ fn tick(app: &AppHandle, baseline: Option<HashMap<u16, Usage>>) -> Option<HashMa
 
 /// Usage of each watched port. A port is in use if any of its sockets is
 /// live; the owner shown is the listening process when there is one.
-fn usage_by_port(connections: &[TcpConnection], ports: &[u16]) -> HashMap<u16, Usage> {
+fn usage_by_port(connections: &[NetSocket], ports: &[u16]) -> HashMap<u16, Usage> {
     ports
         .iter()
         .map(|&port| {
-            let live: Vec<&TcpConnection> = connections
+            let live: Vec<&NetSocket> = connections
                 .iter()
                 .filter(|c| c.local.port() == port && c.state.is_live())
                 .collect();
             let owner = live
                 .iter()
-                .find(|c| c.state == TcpState::Listen)
+                .find(|c| c.state == SocketState::Listen)
                 .or(live.first())
                 .and_then(|c| c.pid);
             (
@@ -144,8 +144,8 @@ mod tests {
     use super::*;
     use crate::network::Protocol;
 
-    fn conn(local: &str, state: TcpState, pid: Option<u32>) -> TcpConnection {
-        TcpConnection {
+    fn conn(local: &str, state: SocketState, pid: Option<u32>) -> NetSocket {
+        NetSocket {
             protocol: Protocol::Tcp,
             local: local.parse().unwrap(),
             remote: None,
@@ -162,9 +162,9 @@ mod tests {
     #[test]
     fn usage_prefers_the_listening_owner_and_ignores_leftovers() {
         let connections = [
-            conn("127.0.0.1:3000", TcpState::Established, Some(7)),
-            conn("0.0.0.0:3000", TcpState::Listen, Some(42)),
-            conn("127.0.0.1:8080", TcpState::TimeWait, None),
+            conn("127.0.0.1:3000", SocketState::Established, Some(7)),
+            conn("0.0.0.0:3000", SocketState::Listen, Some(42)),
+            conn("127.0.0.1:8080", SocketState::TimeWait, None),
         ];
         let usage = usage_by_port(&connections, &[3000, 8080, 9999]);
         assert_eq!(

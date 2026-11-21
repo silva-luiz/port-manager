@@ -1,4 +1,4 @@
-import type { PortEntry, TcpState } from "../../types/ports";
+import type { PortEntry, SocketState } from "../../types/ports";
 
 export interface PortFilters {
   search: string;
@@ -6,7 +6,9 @@ export interface PortFilters {
   processName: string;
   /** Raw text from the port input; applied only when it is a valid port. */
   port: string;
-  state: TcpState | "";
+  state: SocketState | "";
+  /** Protocol family; "tcp" also matches TCPv6 and "udp" UDPv6. */
+  protocol: "" | "tcp" | "udp";
   /**
    * Hide sockets the backend reports as not live (TIME_WAIT/CLOSED leftovers).
    * Ignored when a specific state is chosen, so picking "Time wait" still works.
@@ -19,6 +21,7 @@ export const DEFAULT_FILTERS: PortFilters = {
   processName: "",
   port: "",
   state: "",
+  protocol: "",
   hideInactive: true,
 };
 
@@ -55,6 +58,7 @@ export function filterPorts(entries: PortEntry[], filters: PortFilters): PortEnt
     if (filters.hideInactive && !filters.state && !e.live) return false;
     if (filters.processName && e.processName !== filters.processName) return false;
     if (filters.state && e.state !== filters.state) return false;
+    if (filters.protocol && !e.protocol.startsWith(filters.protocol)) return false;
     if (port !== null && e.localPort !== port) return false;
     if (!search) return true;
     return [e.localPort, e.localAddress, e.remoteAddress, e.remotePort, e.processName, e.pid, e.commandLine].some(
@@ -86,6 +90,6 @@ export function distinctProcessNames(entries: PortEntry[]): string[] {
   return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
 
-export function distinctStates(entries: PortEntry[]): TcpState[] {
+export function distinctStates(entries: PortEntry[]): SocketState[] {
   return [...new Set(entries.map((e) => e.state))].sort();
 }

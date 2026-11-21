@@ -58,6 +58,18 @@ describe("filterPorts", () => {
     expect(ports(filterPorts(rows, { ...DEFAULT_FILTERS, state: "timeWait" }))).toEqual([80]);
   });
 
+  it("filters by protocol family, including IPv6", () => {
+    const mixed = [
+      makeEntry({ localPort: 1, protocol: "tcp" }),
+      makeEntry({ localPort: 2, protocol: "tcp6" }),
+      makeEntry({ localPort: 3, protocol: "udp", state: "bound" }),
+      makeEntry({ localPort: 4, protocol: "udp6", state: "bound" }),
+    ];
+    expect(ports(filterPorts(mixed, { ...ALL, protocol: "tcp" }))).toEqual([1, 2]);
+    expect(ports(filterPorts(mixed, { ...ALL, protocol: "udp" }))).toEqual([3, 4]);
+    expect(filterPorts(mixed, ALL)).toHaveLength(4);
+  });
+
   it("filters by process and state together", () => {
     expect(ports(filterPorts(rows, { ...ALL, state: "established" }))).toEqual([443]);
     expect(filterPorts(rows, { ...ALL, processName: "hugo.exe", state: "established" })).toEqual([]);

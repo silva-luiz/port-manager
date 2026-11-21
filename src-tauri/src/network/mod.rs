@@ -1,4 +1,4 @@
-//! TCP connection discovery. Reading the OS connection table is platform
+//! TCP and UDP socket discovery. Reading the OS socket tables is platform
 //! specific and lives in per-OS submodules; the types here are shared.
 
 #[cfg(windows)]
@@ -14,11 +14,13 @@ use crate::error::AppError;
 pub enum Protocol {
     Tcp,
     Tcp6,
+    Udp,
+    Udp6,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum TcpState {
+pub enum SocketState {
     Closed,
     Listen,
     SynSent,
@@ -31,34 +33,36 @@ pub enum TcpState {
     LastAck,
     TimeWait,
     DeleteTcb,
+    /// UDP has no connection state; a bound UDP socket is simply in use.
+    Bound,
     Unknown,
 }
 
-impl TcpState {
+impl SocketState {
     /// A socket in TIME_WAIT or CLOSED is a leftover of a finished
     /// connection; it does not mean anything is using the port.
     pub fn is_live(self) -> bool {
-        !matches!(self, TcpState::TimeWait | TcpState::Closed)
+        !matches!(self, SocketState::TimeWait | SocketState::Closed)
     }
 }
 
-/// One row of the OS TCP table, before any process information is attached.
+/// One row of an OS socket table, before any process information is attached.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TcpConnection {
+pub struct NetSocket {
     pub protocol: Protocol,
     pub local: SocketAddr,
     /// `None` for listening sockets and rows without a meaningful peer.
     pub remote: Option<SocketAddr>,
-    pub state: TcpState,
+    pub state: SocketState,
     /// `None` when the OS does not attribute the socket to a process (PID 0).
     pub pid: Option<u32>,
 }
 
-/// Lists every IPv4 and IPv6 TCP socket known to the operating system.
-pub fn tcp_connections() -> Result<Vec<TcpConnection>, AppError> {
+/// Lists every IPv4 and IPv6 TCP and UDP socket known to the operating system.
+pub fn sockets() -> Result<Vec<NetSocket>, AppError> {
     #[cfg(windows)]
     {
-        windows::tcp_connections()
+        windows::sockets()
     }
     #[cfg(not(windows))]
     {
@@ -69,8 +73,8 @@ pub fn tcp_connections() -> Result<Vec<TcpConnection>, AppError> {
 }
 
 /// Treats an all-zero peer (`0.0.0.0:0` / `[::]:0`) as "no remote address".
-fn meaningful_remote(state: TcpState, remote: SocketAddr) -> Option<SocketAddr> {
-    if state == TcpState::Listen || (remote.ip().is_unspecified() && remote.port() == 0) {
+fn meaningful_remote(state: SocketState, remote: SocketAddr) -> Option<SocketAddr> {
+    if state == SocketState::Listen || (remote.ip().is_unspecified() && remote.port() == 0) {
         None
     } else {
         Some(remote)
@@ -90,25 +94,29 @@ mod tests {
     #[test]
     fn unspecified_remote_is_dropped() {
         let zero: SocketAddr = "0.0.0.0:0".parse().unwrap();
-        assert_eq!(meaningful_remote(TcpState::Established, zero), None);
+        assert_eq!(meaningful_remote(SocketState::Established, zero), None);
         let zero6: SocketAddr = "[::]:0".parse().unwrap();
-        assert_eq!(meaningful_remote(TcpState::TimeWait, zero6), None);
+        assert_eq!(meaningful_remote(SocketState::TimeWait, zero6), None);
     }
 
     #[test]
     fn listening_sockets_have_no_remote() {
         let peer: SocketAddr = "10.0.0.1:443".parse().unwrap();
-        assert_eq!(meaningful_remote(TcpState::Listen, peer), None);
-        assert_eq!(meaningful_remote(TcpState::Established, peer), Some(peer));
+        assert_eq!(meaningful_remote(SocketState::Listen, peer), None);
+        assert_eq!(
+            meaningful_remote(SocketState::Established, peer),
+            Some(peer)
+        );
     }
 
     #[test]
     fn finished_connections_are_not_live() {
-        assert!(TcpState::Listen.is_live());
-        assert!(TcpState::Established.is_live());
-        assert!(TcpState::CloseWait.is_live());
-        assert!(!TcpState::TimeWait.is_live());
-        assert!(!TcpState::Closed.is_live());
+        assert!(SocketState::Listen.is_live());
+        assert!(SocketState::Established.is_live());
+        assert!(SocketState::CloseWait.is_live());
+        assert!(SocketState::Bound.is_live());
+        assert!(!SocketState::TimeWait.is_live());
+        assert!(!SocketState::Closed.is_live());
     }
 
     #[test]

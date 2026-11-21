@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::clock;
 use crate::error::AppError;
-use crate::network::{self, Protocol, TcpConnection, TcpState};
+use crate::network::{self, NetSocket, Protocol, SocketState};
 use crate::process;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -17,8 +17,8 @@ pub struct PortEntry {
     pub local_port: u16,
     pub remote_address: Option<String>,
     pub remote_port: Option<u16>,
-    pub state: TcpState,
-    /// Whether the socket still counts as in use (see `TcpState::is_live`).
+    pub state: SocketState,
+    /// Whether the socket still counts as in use (see `SocketState::is_live`).
     /// The UI relies on this instead of re-implementing the rule.
     pub live: bool,
     pub pid: Option<u32>,
@@ -51,7 +51,7 @@ pub struct PortSnapshot {
 }
 
 pub fn snapshot() -> Result<PortSnapshot, AppError> {
-    let connections = network::tcp_connections()?;
+    let connections = network::sockets()?;
 
     // Missing names are not fatal: the ports are still worth showing.
     let (names, process_lookup_error) = match process::process_names() {
@@ -76,7 +76,7 @@ pub fn snapshot() -> Result<PortSnapshot, AppError> {
 }
 
 fn build_entries(
-    connections: Vec<TcpConnection>,
+    connections: Vec<NetSocket>,
     names: &HashMap<u32, String>,
     command_lines: &HashMap<u32, String>,
 ) -> Vec<PortEntry> {
@@ -112,13 +112,13 @@ fn summarize(entries: &[PortEntry]) -> PortSummary {
             .len(),
         listening_ports: entries
             .iter()
-            .filter(|e| e.state == TcpState::Listen)
+            .filter(|e| e.state == SocketState::Listen)
             .map(|e| e.local_port)
             .collect::<HashSet<_>>()
             .len(),
         established_connections: entries
             .iter()
-            .filter(|e| e.state == TcpState::Established)
+            .filter(|e| e.state == SocketState::Established)
             .count(),
     }
 }
@@ -127,8 +127,8 @@ fn summarize(entries: &[PortEntry]) -> PortSummary {
 mod tests {
     use super::*;
 
-    fn conn(protocol: Protocol, local: &str, state: TcpState, pid: Option<u32>) -> TcpConnection {
-        TcpConnection {
+    fn conn(protocol: Protocol, local: &str, state: SocketState, pid: Option<u32>) -> NetSocket {
+        NetSocket {
             protocol,
             local: local.parse().unwrap(),
             remote: None,
@@ -142,9 +142,19 @@ mod tests {
         let names = HashMap::from([(100, "hugo.exe".to_string())]);
         let entries = build_entries(
             vec![
-                conn(Protocol::Tcp, "127.0.0.1:1313", TcpState::Listen, Some(100)),
-                conn(Protocol::Tcp, "127.0.0.1:5000", TcpState::Listen, Some(200)),
-                conn(Protocol::Tcp, "127.0.0.1:6000", TcpState::TimeWait, None),
+                conn(
+                    Protocol::Tcp,
+                    "127.0.0.1:1313",
+                    SocketState::Listen,
+                    Some(100),
+                ),
+                conn(
+                    Protocol::Tcp,
+                    "127.0.0.1:5000",
+                    SocketState::Listen,
+                    Some(200),
+                ),
+                conn(Protocol::Tcp, "127.0.0.1:6000", SocketState::TimeWait, None),
             ],
             &names,
             &HashMap::new(),
@@ -160,21 +170,21 @@ mod tests {
         let entries = build_entries(
             vec![
                 // Same port on IPv4 and IPv6 counts as one listening port.
-                conn(Protocol::Tcp, "0.0.0.0:80", TcpState::Listen, Some(1)),
-                conn(Protocol::Tcp6, "[::]:80", TcpState::Listen, Some(1)),
+                conn(Protocol::Tcp, "0.0.0.0:80", SocketState::Listen, Some(1)),
+                conn(Protocol::Tcp6, "[::]:80", SocketState::Listen, Some(1)),
                 conn(
                     Protocol::Tcp,
                     "127.0.0.1:5000",
-                    TcpState::Established,
+                    SocketState::Established,
                     Some(2),
                 ),
                 conn(
                     Protocol::Tcp,
                     "127.0.0.1:5001",
-                    TcpState::Established,
+                    SocketState::Established,
                     Some(2),
                 ),
-                conn(Protocol::Tcp, "127.0.0.1:6000", TcpState::TimeWait, None),
+                conn(Protocol::Tcp, "127.0.0.1:6000", SocketState::TimeWait, None),
             ],
             &HashMap::new(),
             &HashMap::new(),
@@ -196,7 +206,7 @@ mod tests {
             vec![conn(
                 Protocol::Tcp6,
                 "[::1]:8080",
-                TcpState::Listen,
+                SocketState::Listen,
                 Some(7),
             )],
             &HashMap::new(),

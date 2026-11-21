@@ -48,8 +48,8 @@ port-manager/
         ├── error.rs                  # AppError, serialized as { kind, message }
         ├── clock.rs                  # Wall-clock timestamps
         ├── network/
-        │   ├── mod.rs                # Protocol, TcpState, TcpConnection, OS dispatch
-        │   └── windows.rs            # GetExtendedTcpTable (IPv4 + IPv6)
+        │   ├── mod.rs                # Protocol, SocketState, NetSocket, OS dispatch
+        │   └── windows.rs            # GetExtended{Tcp,Udp}Table (IPv4 + IPv6)
         ├── process/
         │   ├── mod.rs                # Names, details, PID validation, OS dispatch
         │   ├── windows.rs            # ToolHelp snapshot, executable path, open_process
@@ -72,8 +72,9 @@ port-manager/
 ## Port discovery flow
 
 1. `list_ports` moves the scan onto a blocking thread so the UI never freezes.
-2. `network::tcp_connections()` reads the IPv4 and IPv6 TCP tables with their owning PIDs
-   (`GetExtendedTcpTable`, the same source `netstat -ano` uses). PID 0 becomes `None`, and an
+2. `network::sockets()` reads the IPv4 and IPv6 TCP and UDP tables with their owning PIDs
+   (`GetExtendedTcpTable` / `GetExtendedUdpTable`, the same source `netstat -ano` uses). UDP
+   has no connection state, so UDP sockets get `SocketState::Bound`, which counts as live. PID 0 becomes `None`, and an
    all-zero peer becomes "no remote address".
 3. `process::process_names()` takes one ToolHelp snapshot of PID → executable name. This works
    for protected system processes without elevation. If it fails, ports are still returned
@@ -83,7 +84,7 @@ port-manager/
 4. `ports::snapshot()` joins the two and computes the dashboard summary, so the numbers are
    defined in one place:
    - **Active ports**: distinct local ports with a live socket. Liveness is defined once,
-     in `TcpState::is_live()` (everything except TIME_WAIT/CLOSED), and sent to the UI as
+     in `SocketState::is_live()` (everything except TIME_WAIT/CLOSED), and sent to the UI as
      `PortEntry.live`; the Favorites view uses that flag instead of its own rule.
    - **Listening**: distinct local ports in LISTEN (IPv4 and IPv6 counted once).
    - **Established**: ESTABLISHED sockets.

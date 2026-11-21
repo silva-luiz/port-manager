@@ -1,42 +1,82 @@
-//! Windows TCP table reader built on `GetExtendedTcpTable` (IP Helper API).
-//! This is the same data source `netstat -ano` uses; no shell is involved.
+//! Windows socket table reader built on `GetExtendedTcpTable` and
+//! `GetExtendedUdpTable` (IP Helper API), the same data source `netstat -ano`
+//! uses; no shell is involved.
 
+use std::ffi::c_void;
 use std::mem::{offset_of, size_of, size_of_val};
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::ptr;
 
 use windows_sys::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::IpHelper::{
-    GetExtendedTcpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCP6TABLE_OWNER_PID, MIB_TCPROW_OWNER_PID,
-    MIB_TCPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL,
+    GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCP6TABLE_OWNER_PID,
+    MIB_TCPROW_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6ROW_OWNER_PID, MIB_UDP6TABLE_OWNER_PID,
+    MIB_UDPROW_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
 use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6};
 
-use super::{Protocol, TcpConnection, TcpState, meaningful_remote, owning_pid};
+use super::{NetSocket, Protocol, SocketState, meaningful_remote, owning_pid};
 use crate::error::AppError;
 
 /// The table can grow between the size query and the read; retry a few times.
 const MAX_ATTEMPTS: usize = 5;
 
-pub fn tcp_connections() -> Result<Vec<TcpConnection>, AppError> {
-    let mut connections = Vec::new();
+pub fn sockets() -> Result<Vec<NetSocket>, AppError> {
+    let mut sockets = Vec::new();
 
-    let v4 = read_table(AF_INET)?;
-    let v4_rows: &[MIB_TCPROW_OWNER_PID] =
-        table_rows(&v4, offset_of!(MIB_TCPTABLE_OWNER_PID, table));
-    connections.extend(v4_rows.iter().map(from_v4_row));
+    let tcp4 = read_table("GetExtendedTcpTable", tcp_query(AF_INET))?;
+    let rows: &[MIB_TCPROW_OWNER_PID] =
+        table_rows(&tcp4, offset_of!(MIB_TCPTABLE_OWNER_PID, table));
+    sockets.extend(rows.iter().map(from_v4_row));
 
-    let v6 = read_table(AF_INET6)?;
-    let v6_rows: &[MIB_TCP6ROW_OWNER_PID] =
-        table_rows(&v6, offset_of!(MIB_TCP6TABLE_OWNER_PID, table));
-    connections.extend(v6_rows.iter().map(from_v6_row));
+    let tcp6 = read_table("GetExtendedTcpTable", tcp_query(AF_INET6))?;
+    let rows: &[MIB_TCP6ROW_OWNER_PID] =
+        table_rows(&tcp6, offset_of!(MIB_TCP6TABLE_OWNER_PID, table));
+    sockets.extend(rows.iter().map(from_v6_row));
 
-    Ok(connections)
+    let udp4 = read_table("GetExtendedUdpTable", udp_query(AF_INET))?;
+    let rows: &[MIB_UDPROW_OWNER_PID] =
+        table_rows(&udp4, offset_of!(MIB_UDPTABLE_OWNER_PID, table));
+    sockets.extend(rows.iter().map(from_udp_v4_row));
+
+    let udp6 = read_table("GetExtendedUdpTable", udp_query(AF_INET6))?;
+    let rows: &[MIB_UDP6ROW_OWNER_PID] =
+        table_rows(&udp6, offset_of!(MIB_UDP6TABLE_OWNER_PID, table));
+    sockets.extend(rows.iter().map(from_udp_v6_row));
+
+    Ok(sockets)
 }
 
-/// Fetches the raw table for one address family. The buffer is `u64`-backed
-/// so the row structs (4-byte aligned) can be read in place.
-fn read_table(family: u16) -> Result<Vec<u64>, AppError> {
+/// A table query: fills `buffer` (or reports the needed `size`) and returns a Win32 error code.
+type Query = Box<dyn Fn(*mut c_void, &mut u32) -> u32>;
+
+fn tcp_query(family: u16) -> Query {
+    Box::new(move |buffer, size| {
+        // SAFETY: `read_table` passes either null with size 0 or a writable
+        // buffer of at least `size` bytes.
+        unsafe {
+            GetExtendedTcpTable(
+                buffer,
+                size,
+                0,
+                u32::from(family),
+                TCP_TABLE_OWNER_PID_ALL,
+                0,
+            )
+        }
+    })
+}
+
+fn udp_query(family: u16) -> Query {
+    Box::new(move |buffer, size| {
+        // SAFETY: as in `tcp_query`.
+        unsafe { GetExtendedUdpTable(buffer, size, 0, u32::from(family), UDP_TABLE_OWNER_PID, 0) }
+    })
+}
+
+/// Fetches a raw table, growing the buffer until it fits. The buffer is
+/// `u64`-backed so the row structs (4-byte aligned) can be read in place.
+fn read_table(api: &str, query: Query) -> Result<Vec<u64>, AppError> {
     let mut buf: Vec<u64> = Vec::new();
     let mut size: u32 = 0;
 
@@ -46,18 +86,9 @@ fn read_table(family: u16) -> Result<Vec<u64>, AppError> {
         } else {
             buf.as_mut_ptr().cast()
         };
-        // SAFETY: `ptr` is either null with `size == 0` (size query) or points
-        // to a writable buffer of at least `size` bytes.
-        let rc = unsafe {
-            GetExtendedTcpTable(
-                ptr,
-                &mut size,
-                0,
-                u32::from(family),
-                TCP_TABLE_OWNER_PID_ALL,
-                0,
-            )
-        };
+        // `ptr` is either null with `size == 0` (size query) or points to a
+        // writable buffer of at least `size` bytes.
+        let rc = query(ptr, &mut size);
         match rc {
             NO_ERROR => return Ok(buf),
             ERROR_INSUFFICIENT_BUFFER => {
@@ -68,18 +99,18 @@ fn read_table(family: u16) -> Result<Vec<u64>, AppError> {
             }
             code => {
                 return Err(AppError::Network {
-                    detail: format!("GetExtendedTcpTable failed with Windows error {code}"),
+                    detail: format!("{api} failed with Windows error {code}"),
                 });
             }
         }
     }
 
     Err(AppError::Network {
-        detail: "the TCP table kept changing size while it was being read".into(),
+        detail: format!("the table from {api} kept changing size while it was being read"),
     })
 }
 
-/// Views the rows of a `MIB_TCP*TABLE_OWNER_PID` buffer. The entry count is
+/// Views the rows of a `MIB_*TABLE_OWNER_PID` buffer. The entry count is
 /// clamped to the buffer length so a malformed header can't cause an overread.
 fn table_rows<Row>(buf: &[u64], rows_offset: usize) -> &[Row] {
     let bytes = size_of_val(buf);
@@ -95,7 +126,7 @@ fn table_rows<Row>(buf: &[u64], rows_offset: usize) -> &[Row] {
     unsafe { std::slice::from_raw_parts(base.add(rows_offset).cast::<Row>(), count) }
 }
 
-fn from_v4_row(row: &MIB_TCPROW_OWNER_PID) -> TcpConnection {
+fn from_v4_row(row: &MIB_TCPROW_OWNER_PID) -> NetSocket {
     let state = state_from_mib(row.dwState);
     let local = SocketAddr::V4(SocketAddrV4::new(
         Ipv4Addr::from(row.dwLocalAddr.to_ne_bytes()),
@@ -105,7 +136,7 @@ fn from_v4_row(row: &MIB_TCPROW_OWNER_PID) -> TcpConnection {
         Ipv4Addr::from(row.dwRemoteAddr.to_ne_bytes()),
         port_from_dword(row.dwRemotePort),
     ));
-    TcpConnection {
+    NetSocket {
         protocol: Protocol::Tcp,
         local,
         remote: meaningful_remote(state, remote),
@@ -114,7 +145,7 @@ fn from_v4_row(row: &MIB_TCPROW_OWNER_PID) -> TcpConnection {
     }
 }
 
-fn from_v6_row(row: &MIB_TCP6ROW_OWNER_PID) -> TcpConnection {
+fn from_v6_row(row: &MIB_TCP6ROW_OWNER_PID) -> NetSocket {
     let state = state_from_mib(row.dwState);
     let local = SocketAddr::V6(SocketAddrV6::new(
         Ipv6Addr::from(row.ucLocalAddr),
@@ -128,11 +159,39 @@ fn from_v6_row(row: &MIB_TCP6ROW_OWNER_PID) -> TcpConnection {
         0,
         row.dwRemoteScopeId,
     ));
-    TcpConnection {
+    NetSocket {
         protocol: Protocol::Tcp6,
         local,
         remote: meaningful_remote(state, remote),
         state,
+        pid: owning_pid(row.dwOwningPid),
+    }
+}
+
+fn from_udp_v4_row(row: &MIB_UDPROW_OWNER_PID) -> NetSocket {
+    NetSocket {
+        protocol: Protocol::Udp,
+        local: SocketAddr::V4(SocketAddrV4::new(
+            Ipv4Addr::from(row.dwLocalAddr.to_ne_bytes()),
+            port_from_dword(row.dwLocalPort),
+        )),
+        remote: None,
+        state: SocketState::Bound,
+        pid: owning_pid(row.dwOwningPid),
+    }
+}
+
+fn from_udp_v6_row(row: &MIB_UDP6ROW_OWNER_PID) -> NetSocket {
+    NetSocket {
+        protocol: Protocol::Udp6,
+        local: SocketAddr::V6(SocketAddrV6::new(
+            Ipv6Addr::from(row.ucLocalAddr),
+            port_from_dword(row.dwLocalPort),
+            0,
+            row.dwLocalScopeId,
+        )),
+        remote: None,
+        state: SocketState::Bound,
         pid: owning_pid(row.dwOwningPid),
     }
 }
@@ -144,21 +203,21 @@ fn port_from_dword(raw: u32) -> u16 {
 }
 
 /// Maps `MIB_TCP_STATE` values (1..=12).
-fn state_from_mib(raw: u32) -> TcpState {
+fn state_from_mib(raw: u32) -> SocketState {
     match raw {
-        1 => TcpState::Closed,
-        2 => TcpState::Listen,
-        3 => TcpState::SynSent,
-        4 => TcpState::SynReceived,
-        5 => TcpState::Established,
-        6 => TcpState::FinWait1,
-        7 => TcpState::FinWait2,
-        8 => TcpState::CloseWait,
-        9 => TcpState::Closing,
-        10 => TcpState::LastAck,
-        11 => TcpState::TimeWait,
-        12 => TcpState::DeleteTcb,
-        _ => TcpState::Unknown,
+        1 => SocketState::Closed,
+        2 => SocketState::Listen,
+        3 => SocketState::SynSent,
+        4 => SocketState::SynReceived,
+        5 => SocketState::Established,
+        6 => SocketState::FinWait1,
+        7 => SocketState::FinWait2,
+        8 => SocketState::CloseWait,
+        9 => SocketState::Closing,
+        10 => SocketState::LastAck,
+        11 => SocketState::TimeWait,
+        12 => SocketState::DeleteTcb,
+        _ => SocketState::Unknown,
     }
 }
 
@@ -176,9 +235,9 @@ mod tests {
 
     #[test]
     fn unknown_state_values_do_not_panic() {
-        assert_eq!(state_from_mib(2), TcpState::Listen);
-        assert_eq!(state_from_mib(0), TcpState::Unknown);
-        assert_eq!(state_from_mib(99), TcpState::Unknown);
+        assert_eq!(state_from_mib(2), SocketState::Listen);
+        assert_eq!(state_from_mib(0), SocketState::Unknown);
+        assert_eq!(state_from_mib(99), SocketState::Unknown);
     }
 
     #[test]
@@ -188,12 +247,26 @@ mod tests {
     }
 
     #[test]
+    fn finds_a_bound_udp_socket_owned_by_this_process() {
+        let socket = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+
+        let found = sockets().unwrap().into_iter().any(|s| {
+            s.protocol == Protocol::Udp
+                && s.state == SocketState::Bound
+                && s.local.port() == port
+                && s.pid == Some(std::process::id())
+        });
+        assert!(found, "UDP socket on port {port} not reported");
+    }
+
+    #[test]
     fn finds_a_listener_owned_by_this_process() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
 
-        let found = tcp_connections().unwrap().into_iter().any(|c| {
-            c.state == TcpState::Listen
+        let found = sockets().unwrap().into_iter().any(|c| {
+            c.state == SocketState::Listen
                 && c.local.port() == port
                 && c.pid == Some(std::process::id())
                 && c.remote.is_none()
