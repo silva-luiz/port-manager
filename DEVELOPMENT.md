@@ -10,13 +10,14 @@ Run from the project root unless noted.
 | `npm run tauri dev` | Run the desktop app with hot reload (frontend) and auto-rebuild (Rust) |
 | `npm run dev` | Frontend only in a browser at http://localhost:1420 (IPC calls will fail; useful for layout work) |
 | `npm run build` | Type-check (`tsc`) and build the frontend into `dist/` |
+| `npm test` | Run frontend unit tests (Vitest) |
 | `npm run tauri build` | Build a release installer |
 | `cargo test` *(in `src-tauri/`)* | Run Rust unit tests |
 | `cargo clippy --all-targets -- -D warnings` *(in `src-tauri/`)* | Lint Rust code |
 | `cargo fmt` *(in `src-tauri/`)* | Format Rust code |
 
-Before considering a change done, run: `npm run build`, `cargo fmt --check`, `cargo clippy
---all-targets -- -D warnings` and `cargo test`.
+Before considering a change done, run: `npm test`, `npm run build`, `cargo fmt --check`,
+`cargo clippy --all-targets -- -D warnings` and `cargo test`.
 
 ## Adding a backend command
 
@@ -60,6 +61,10 @@ in tests.
   (`bg-surface`, `border-line`, `text-muted`, `text-accent`, `bg-ok`/`bg-warn`/`bg-danger`).
   Use `font-mono` only for values that benefit from alignment (ports, PIDs, addresses).
 - Icons come from `lucide-react`.
+- Pure logic (filtering, sorting, joins, formatting) lives in plain `.ts` modules with a
+  sibling `*.test.ts`. Shared test data builders are in `src/test/fixtures.ts`.
+- Never re-derive a rule the backend already computes (e.g. use `entry.live`, not a
+  list of states).
 
 ### Dependencies
 
