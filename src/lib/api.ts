@@ -15,6 +15,8 @@ export const api = {
   healthCheck: () => invoke<HealthStatus>("health_check"),
   listPorts: () => invoke<PortSnapshot>("list_ports"),
   processDetails: (pid: number) => invoke<ProcessDetails>("process_details", { pid }),
+  /** Opens Explorer with the executable of `pid` selected. */
+  revealExecutable: (pid: number) => invoke<void>("reveal_executable", { pid }),
   /** Only call after the user confirmed in the UI; the backend re-validates the name. */
   terminateProcess: (pid: number, expectedName: string, includeChildren: boolean) =>
     invoke<TerminationOutcome>("terminate_process", { pid, expectedName, includeChildren }),

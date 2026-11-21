@@ -116,7 +116,9 @@ port-manager/
   command individually (`allow-list-ports`, …). App commands are declared in `build.rs`
   (`AppManifest::commands`), so a command that is not granted in
   `capabilities/default.json` is denied, and an unknown permission name fails the build.
-  No shell, filesystem or opener plugins.
+  `tauri-plugin-opener` is used only from Rust (`reveal_executable(pid)` resolves the path
+  itself), so the webview has no opener permission and cannot open arbitrary paths. No shell
+  or filesystem plugins.
 - No command accepts or executes shell input from the frontend.
 - A strict Content Security Policy is set in `tauri.conf.json`: scripts and styles only from the
   app itself, IPC connections only, no inline styles. `devCsp` adds `'unsafe-inline'` for

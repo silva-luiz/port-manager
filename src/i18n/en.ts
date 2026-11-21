@@ -125,6 +125,7 @@ export const en = {
     name: "Name",
     pid: "PID",
     executable: "Executable",
+    openFolder: "Open folder",
     commandLine: "Command line",
     parent: "Started by",
     children: "Child processes",

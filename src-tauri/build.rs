@@ -6,6 +6,7 @@ const COMMANDS: &[&str] = &[
     "list_ports",
     "process_details",
     "terminate_process",
+    "reveal_executable",
     "list_favorites",
     "add_favorite",
     "remove_favorite",

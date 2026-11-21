@@ -24,7 +24,8 @@ Early development. What works today:
   add one by number on the Favorites page, which shows whether each one is in use and by
   which process. Optionally, get a Windows notification when a favorite port becomes busy or
   free, even while the app is minimized.
-- One-click copy of PID, port, addresses, executable path and command line.
+- One-click copy of PID, port, addresses, executable path and command line, and "Open folder"
+  to show a process's executable in Explorer.
 - **Settings** (gear icon at the bottom of the left rail): English or Brazilian Portuguese
   interface, automatic refresh (off, or every 2–30 seconds), and keeping the app running in the
   notification area when the window is closed (so favorite alerts keep working). Choices are

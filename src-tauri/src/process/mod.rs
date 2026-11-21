@@ -61,6 +61,12 @@ pub fn process_names() -> Result<HashMap<u32, String>, AppError> {
         .collect())
 }
 
+/// Full path of the process's executable (Windows may refuse for system processes).
+pub fn executable_path(pid: u32) -> Result<String, AppError> {
+    validate_pid(pid)?;
+    imp::executable_path(pid)
+}
+
 pub fn command_line(pid: u32) -> Result<String, AppError> {
     imp::command_line(pid)
 }

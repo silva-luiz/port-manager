@@ -10,6 +10,7 @@ import type { ProcessDetails } from "../../types/process";
 import { StateBadge } from "../ports/StateBadge";
 import type { EndProcessTarget } from "./EndProcessDialog";
 import { ProcessList } from "./ProcessList";
+import { RevealButton } from "./RevealButton";
 
 interface DetailsPanelProps {
   entry: PortEntry;
@@ -153,7 +154,12 @@ function ExecutablePath({ entry, state }: { entry: PortEntry; state: ProcessDeta
     case "loaded": {
       const { executablePath, pathError } = state.details;
       if (executablePath) {
-        return <span className="font-mono text-[12px] break-all select-text">{executablePath}</span>;
+        return (
+          <>
+            <span className="font-mono text-[12px] break-all select-text">{executablePath}</span>
+            <RevealButton pid={entry.pid} />
+          </>
+        );
       }
       return (
         <span className="text-muted">{t.details.pathUnavailable(pathError ? describeError(pathError) : "")}</span>

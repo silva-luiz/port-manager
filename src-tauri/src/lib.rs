@@ -36,6 +36,8 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_notification::init())
+        // Used from Rust only (reveal_executable); the webview gets no opener permission.
+        .plugin(tauri_plugin_opener::init())
         .plugin(logger())
         .setup(|app| {
             log::info!("Port Manager {} starting", env!("CARGO_PKG_VERSION"));
@@ -65,6 +67,7 @@ pub fn run() {
             commands::ports::list_ports,
             commands::process::process_details,
             commands::process::terminate_process,
+            commands::process::reveal_executable,
             commands::favorites::list_favorites,
             commands::favorites::add_favorite,
             commands::favorites::remove_favorite,

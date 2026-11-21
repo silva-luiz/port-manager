@@ -129,6 +129,7 @@ export const ptBR: Messages = {
     name: "Nome",
     pid: "PID",
     executable: "Executável",
+    openFolder: "Abrir pasta",
     commandLine: "Linha de comando",
     parent: "Iniciado por",
     children: "Processos filhos",
