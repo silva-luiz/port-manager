@@ -42,7 +42,7 @@ pub struct PortSnapshot {
     pub summary: PortSummary,
     pub scanned_at_ms: u64,
     /// Set when connections were read but process names could not be.
-    pub process_lookup_error: Option<String>,
+    pub process_lookup_error: Option<AppError>,
 }
 
 pub fn snapshot() -> Result<PortSnapshot, AppError> {
@@ -51,7 +51,7 @@ pub fn snapshot() -> Result<PortSnapshot, AppError> {
     // Missing names are not fatal: the ports are still worth showing.
     let (names, process_lookup_error) = match process::process_names() {
         Ok(names) => (names, None),
-        Err(e) => (HashMap::new(), Some(e.to_string())),
+        Err(e) => (HashMap::new(), Some(e)),
     };
 
     let entries = build_entries(connections, &names);

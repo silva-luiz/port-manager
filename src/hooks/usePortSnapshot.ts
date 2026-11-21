@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, errorMessage } from "../lib/api";
+import { api, toAppError } from "../lib/api";
+import type { AppError } from "../types/error";
 import type { PortSnapshot } from "../types/ports";
 
 /**
@@ -8,7 +9,7 @@ import type { PortSnapshot } from "../types/ports";
  */
 export function usePortSnapshot() {
   const [snapshot, setSnapshot] = useState<PortSnapshot | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -17,7 +18,7 @@ export function usePortSnapshot() {
       setSnapshot(await api.listPorts());
       setError(null);
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toAppError(e));
     } finally {
       setLoading(false);
     }

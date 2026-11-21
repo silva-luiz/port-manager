@@ -1,48 +1,144 @@
 use serde::Serialize;
 
-/// Errors returned by Tauri commands. Serialized as `{ kind, message }` so the
-/// frontend can branch on `kind` without parsing message strings. Messages are
-/// written to be shown to the user as-is.
-#[derive(Debug, Serialize)]
-#[serde(tag = "kind", content = "message", rename_all = "camelCase")]
+/// Why a process is refused for termination.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProtectionReason {
+    CriticalSystemProcess,
+    PortManagerItself,
+}
+
+/// Errors returned by Tauri commands.
+///
+/// Serialized as `{ "kind": "...", ...fields }`. Errors carry data, not
+/// sentences: the frontend turns them into text in the user's language.
+/// `detail` fields hold raw technical context (OS or SQLite error text) that
+/// is shown verbatim.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum AppError {
-    Internal(String),
+    Internal {
+        detail: String,
+    },
     /// Reading the operating system's connection tables failed.
-    Network(String),
+    Network {
+        detail: String,
+    },
     /// The operation is not implemented for the current operating system.
     #[cfg_attr(windows, allow(dead_code))]
-    Unsupported(String),
-    /// A value received from the frontend failed validation.
-    InvalidInput(String),
-    /// The process does not exist (it may have exited since the last refresh).
-    ProcessNotFound(String),
-    /// The OS refused access, typically because elevation would be required.
-    PermissionDenied(String),
-    /// The process is deliberately off-limits (system-critical or this app).
-    ProtectedProcess(String),
+    Unsupported {
+        detail: String,
+    },
     /// Reading or writing the local database failed.
-    Storage(String),
+    Storage {
+        detail: String,
+    },
+    /// PID 0 (or another value that can't identify a process).
+    InvalidPid {
+        pid: u32,
+    },
+    InvalidPort {
+        port: u16,
+    },
+    InvalidProcessName,
+    /// The PID now belongs to a different program than the one confirmed.
+    ProcessNameMismatch {
+        pid: u32,
+        expected: String,
+        actual: String,
+    },
+    /// The process does not exist (it may have exited since the last refresh).
+    ProcessNotFound {
+        pid: u32,
+    },
+    /// The OS refused access, typically because elevation would be required.
+    PermissionDenied {
+        pid: u32,
+        name: Option<String>,
+    },
+    /// The process is deliberately off-limits.
+    ProtectedProcess {
+        name: String,
+        reason: ProtectionReason,
+    },
 }
 
 impl AppError {
-    pub fn message(&self) -> &str {
-        match self {
-            AppError::Internal(m)
-            | AppError::Network(m)
-            | AppError::Unsupported(m)
-            | AppError::InvalidInput(m)
-            | AppError::ProcessNotFound(m)
-            | AppError::PermissionDenied(m)
-            | AppError::ProtectedProcess(m)
-            | AppError::Storage(m) => m,
+    pub fn internal(detail: impl Into<String>) -> Self {
+        Self::Internal {
+            detail: detail.into(),
+        }
+    }
+
+    pub fn storage(detail: impl Into<String>) -> Self {
+        Self::Storage {
+            detail: detail.into(),
         }
     }
 }
 
+/// English text for logs and tests; the UI builds its own localized text.
 impl std::fmt::Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.message())
+        match self {
+            Self::Internal { detail } => write!(f, "internal error: {detail}"),
+            Self::Network { detail } => write!(f, "network inspection error: {detail}"),
+            Self::Unsupported { detail } => write!(f, "unsupported: {detail}"),
+            Self::Storage { detail } => write!(f, "database error: {detail}"),
+            Self::InvalidPid { pid } => write!(f, "invalid PID {pid}"),
+            Self::InvalidPort { port } => write!(f, "invalid port {port}"),
+            Self::InvalidProcessName => write!(f, "invalid process name"),
+            Self::ProcessNameMismatch {
+                pid,
+                expected,
+                actual,
+            } => write!(f, "PID {pid} is now {actual}, not {expected}"),
+            Self::ProcessNotFound { pid } => write!(f, "no process with PID {pid}"),
+            Self::PermissionDenied { pid, .. } => write!(f, "access denied to PID {pid}"),
+            Self::ProtectedProcess { name, reason } => {
+                write!(f, "{name} is protected ({reason:?})")
+            }
+        }
     }
 }
 
 impl std::error::Error for AppError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serializes_kind_with_camel_case_fields() {
+        let json = serde_json::to_value(AppError::ProcessNameMismatch {
+            pid: 42,
+            expected: "node.exe".into(),
+            actual: "hugo.exe".into(),
+        })
+        .unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "processNameMismatch",
+                "pid": 42,
+                "expected": "node.exe",
+                "actual": "hugo.exe"
+            })
+        );
+
+        let json = serde_json::to_value(AppError::ProtectedProcess {
+            name: "csrss.exe".into(),
+            reason: ProtectionReason::CriticalSystemProcess,
+        })
+        .unwrap();
+        assert_eq!(json["reason"], "criticalSystemProcess");
+        assert_eq!(
+            serde_json::to_value(AppError::InvalidProcessName).unwrap(),
+            serde_json::json!({ "kind": "invalidProcessName" })
+        );
+    }
+}

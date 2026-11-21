@@ -5,6 +5,7 @@ mod favorites;
 mod network;
 mod ports;
 mod process;
+mod settings;
 mod storage;
 mod termination;
 
@@ -29,6 +30,8 @@ pub fn run() {
             commands::favorites::list_favorites,
             commands::favorites::add_favorite,
             commands::favorites::remove_favorite,
+            commands::settings::get_settings,
+            commands::settings::set_language,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

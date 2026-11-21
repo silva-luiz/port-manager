@@ -1,5 +1,5 @@
 import type { HealthState } from "../../hooks/useHealthCheck";
-import { formatTime } from "../../lib/labels";
+import { useI18n } from "../../i18n/I18nProvider";
 import { RefreshButton } from "../RefreshButton";
 
 interface HealthPanelProps {
@@ -8,13 +8,14 @@ interface HealthPanelProps {
 }
 
 export function HealthPanel({ state, onCheck }: HealthPanelProps) {
+  const { t } = useI18n();
   return (
     <section aria-labelledby="health-title" className="rounded-lg border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-4 py-2">
         <h2 id="health-title" className="font-medium">
-          Backend health
+          {t.health.title}
         </h2>
-        <RefreshButton onClick={onCheck} busy={state.phase === "checking"} label="Check again" />
+        <RefreshButton onClick={onCheck} busy={state.phase === "checking"} label={t.health.checkAgain} />
       </div>
       <div className="px-4 py-3">
         <HealthBody state={state} />
@@ -24,26 +25,28 @@ export function HealthPanel({ state, onCheck }: HealthPanelProps) {
 }
 
 function HealthBody({ state }: { state: HealthState }) {
+  const { t, formatTime, describeError } = useI18n();
+
   if (state.phase === "checking") {
-    return <p className="text-muted">Contacting the Rust backend…</p>;
+    return <p className="text-muted">{t.health.checking}</p>;
   }
 
   if (state.phase === "offline") {
     return (
       <p className="text-danger">
-        The frontend couldn't reach the Rust backend: {state.error}. If this page is open in a
-        browser, start the app with <code className="font-mono">npm run tauri dev</code> instead.
+        {t.health.offline} {describeError(state.error)} {t.health.browserHint}{" "}
+        <code className="font-mono">npm run tauri dev</code>.
       </p>
     );
   }
 
   const { health, latencyMs } = state;
   const rows: [string, string][] = [
-    ["Status", health.status],
-    ["App version", health.appVersion],
-    ["Platform", `${health.os} (${health.arch})`],
-    ["Round trip", `${latencyMs.toFixed(1)} ms`],
-    ["Checked at", formatTime(health.timestampMs)],
+    [t.health.status, health.status],
+    [t.health.appVersion, health.appVersion],
+    [t.health.platform, `${health.os} (${health.arch})`],
+    [t.health.roundTrip, `${latencyMs.toFixed(1)} ms`],
+    [t.health.checkedAt, formatTime(health.timestampMs)],
   ];
 
   return (

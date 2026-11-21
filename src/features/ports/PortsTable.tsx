@@ -1,26 +1,30 @@
 import { ArrowDown, ArrowUp, Info, Power } from "lucide-react";
 import { FavoriteButton } from "../../components/FavoriteButton";
+import { useI18n } from "../../i18n/I18nProvider";
+import type { Messages } from "../../i18n/en";
 import { PROTOCOL_LABELS } from "../../lib/labels";
 import type { PortEntry } from "../../types/ports";
 import type { EndProcessTarget } from "../process/EndProcessDialog";
 import { entryKey, type SortKey, type SortOrder } from "./portQuery";
 import { StateBadge } from "./StateBadge";
 
+type ColumnId = keyof Messages["ports"]["columns"];
+
 interface Column {
-  key: SortKey | null;
-  label: string;
+  id: ColumnId;
+  sortKey: SortKey | null;
   className?: string;
 }
 
 const COLUMNS: Column[] = [
-  { key: "localPort", label: "Port", className: "w-20" },
-  { key: "protocol", label: "Protocol", className: "w-20" },
-  { key: "localAddress", label: "Local address" },
-  { key: null, label: "Remote" },
-  { key: "processName", label: "Process" },
-  { key: "pid", label: "PID", className: "w-20" },
-  { key: "state", label: "State", className: "w-32" },
-  { key: null, label: "Actions", className: "w-24" },
+  { id: "port", sortKey: "localPort", className: "w-20" },
+  { id: "protocol", sortKey: "protocol", className: "w-20" },
+  { id: "localAddress", sortKey: "localAddress" },
+  { id: "remote", sortKey: null },
+  { id: "process", sortKey: "processName" },
+  { id: "pid", sortKey: "pid", className: "w-20" },
+  { id: "state", sortKey: "state", className: "w-32" },
+  { id: "actions", sortKey: null, className: "w-24" },
 ];
 
 interface PortsTableProps {
@@ -49,25 +53,29 @@ export function PortsTable({
   favoritePorts,
   onToggleFavorite,
 }: PortsTableProps) {
+  const { t } = useI18n();
+
   return (
     <table className="w-full table-fixed border-collapse text-left">
       <thead className="sticky top-0 z-10 bg-surface">
         <tr className="border-b border-line">
-          {COLUMNS.map(({ key, label, className }) => (
+          {COLUMNS.map(({ id, sortKey, className }) => (
             <th
-              key={label}
+              key={id}
               scope="col"
-              aria-sort={key && sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : undefined}
+              aria-sort={
+                sortKey && sort.key === sortKey ? (sort.direction === "asc" ? "ascending" : "descending") : undefined
+              }
               className={`h-8 px-3 text-xs font-medium text-muted ${className ?? ""}`}
             >
-              {key ? (
-                <button type="button" onClick={() => onSort(key)} className="flex items-center gap-1 hover:text-fg">
-                  {label}
-                  {sort.key === key &&
+              {sortKey ? (
+                <button type="button" onClick={() => onSort(sortKey)} className="flex items-center gap-1 hover:text-fg">
+                  {t.ports.columns[id]}
+                  {sort.key === sortKey &&
                     (sort.direction === "asc" ? <ArrowUp size={12} aria-hidden /> : <ArrowDown size={12} aria-hidden />)}
                 </button>
               ) : (
-                label
+                t.ports.columns[id]
               )}
             </th>
           ))}
@@ -76,13 +84,12 @@ export function PortsTable({
       <tbody>
         {entries.map((e, i) => {
           const key = entryKey(e);
-          const selected = key === selectedKey;
           const canEnd = e.pid !== null && e.processName !== null;
           return (
             <tr
               key={`${key}|${i}`}
               onClick={() => onSelect(e)}
-              aria-selected={selected}
+              aria-selected={key === selectedKey}
               className="h-8 cursor-default border-b border-line/60 hover:bg-raised/60 aria-selected:bg-accent/10"
             >
               <td className="px-3 font-mono text-[12px] tabular-nums">{e.localPort}</td>
@@ -95,10 +102,7 @@ export function PortsTable({
               </td>
               <td
                 className="truncate px-3"
-                title={
-                  e.processName ??
-                  (e.pid === null ? "Not owned by a process" : "Process name unavailable (it may have exited)")
-                }
+                title={e.processName ?? (e.pid === null ? t.ports.noOwner : t.ports.nameUnavailable)}
               >
                 {e.processName ?? NONE}
               </td>
@@ -113,8 +117,8 @@ export function PortsTable({
                     type="button"
                     className={ICON_BUTTON}
                     onClick={() => onSelect(e)}
-                    aria-label={`Show details for port ${e.localPort}`}
-                    title="Show details"
+                    aria-label={t.ports.showDetails(e.localPort)}
+                    title={t.ports.showDetailsTitle}
                   >
                     <Info size={14} aria-hidden />
                   </button>
@@ -123,8 +127,8 @@ export function PortsTable({
                     className={`${ICON_BUTTON} hover:text-danger`}
                     disabled={!canEnd}
                     onClick={() => canEnd && onEndProcess({ pid: e.pid!, name: e.processName! })}
-                    aria-label={canEnd ? `End ${e.processName} (PID ${e.pid})` : "End process unavailable"}
-                    title={canEnd ? `End ${e.processName}…` : "No identifiable process to end"}
+                    aria-label={canEnd ? t.ports.endProcess(e.processName!, e.pid!) : t.ports.endUnavailable}
+                    title={canEnd ? t.ports.endProcessTitle(e.processName!) : t.ports.endUnavailable}
                   >
                     <Power size={14} aria-hidden />
                   </button>

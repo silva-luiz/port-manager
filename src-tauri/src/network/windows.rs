@@ -67,16 +67,16 @@ fn read_table(family: u16) -> Result<Vec<u64>, AppError> {
                 size = size_of_val(buf.as_slice()) as u32;
             }
             code => {
-                return Err(AppError::Network(format!(
-                    "GetExtendedTcpTable failed with Windows error {code}"
-                )));
+                return Err(AppError::Network {
+                    detail: format!("GetExtendedTcpTable failed with Windows error {code}"),
+                });
             }
         }
     }
 
-    Err(AppError::Network(
-        "the TCP table kept changing size while it was being read; try again".into(),
-    ))
+    Err(AppError::Network {
+        detail: "the TCP table kept changing size while it was being read".into(),
+    })
 }
 
 /// Views the rows of a `MIB_TCP*TABLE_OWNER_PID` buffer. The entry count is

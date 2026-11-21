@@ -6,7 +6,7 @@ use windows_sys::Win32::System::Threading::{
     TerminateProcess, WaitForSingleObject,
 };
 
-use crate::error::AppError;
+use crate::error::{AppError, ProtectionReason};
 use crate::process::windows::open_process;
 
 /// Core Windows processes that must never be ended from this app, even when
@@ -37,7 +37,11 @@ pub fn terminate(pid: u32, name: &str) -> Result<bool, AppError> {
     let process = open_process(
         pid,
         PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SYNCHRONIZE,
-    )?;
+    )
+    .map_err(|e| match e {
+        AppError::PermissionDenied { pid, .. } => permission_denied(pid, name),
+        other => other,
+    })?;
     let handle = process.as_raw_handle();
 
     let mut critical = 0;
@@ -50,12 +54,9 @@ pub fn terminate(pid: u32, name: &str) -> Result<bool, AppError> {
     if unsafe { TerminateProcess(handle, 1) } == 0 {
         let err = std::io::Error::last_os_error();
         return Err(if err.raw_os_error() == Some(ERROR_ACCESS_DENIED as i32) {
-            AppError::PermissionDenied(format!(
-                "Windows didn't allow ending {name} (PID {pid}). It may be protected or \
-                 running as another user, and Port Manager runs without administrator rights."
-            ))
+            permission_denied(pid, name)
         } else {
-            AppError::Internal(format!("Could not end {name} (PID {pid}): {err}"))
+            AppError::internal(format!("could not end {name} (PID {pid}): {err}"))
         });
     }
 
@@ -64,8 +65,15 @@ pub fn terminate(pid: u32, name: &str) -> Result<bool, AppError> {
 }
 
 fn protected(name: &str) -> AppError {
-    AppError::ProtectedProcess(format!(
-        "{name} is a critical Windows process. Ending it would crash or destabilize the system, \
-         so Port Manager won't do it."
-    ))
+    AppError::ProtectedProcess {
+        name: name.to_owned(),
+        reason: ProtectionReason::CriticalSystemProcess,
+    }
+}
+
+fn permission_denied(pid: u32, name: &str) -> AppError {
+    AppError::PermissionDenied {
+        pid,
+        name: Some(name.to_owned()),
+    }
 }

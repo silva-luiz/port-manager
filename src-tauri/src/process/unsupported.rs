@@ -5,7 +5,9 @@ use std::collections::HashMap;
 use crate::error::AppError;
 
 fn unsupported() -> AppError {
-    AppError::Unsupported("process inspection is only implemented for Windows".into())
+    AppError::Unsupported {
+        detail: "process inspection is only implemented for Windows".into(),
+    }
 }
 
 pub fn process_names() -> Result<HashMap<u32, String>, AppError> {

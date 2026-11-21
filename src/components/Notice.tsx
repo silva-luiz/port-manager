@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 
 type Tone = "danger" | "warn" | "ok";
 
@@ -16,6 +17,7 @@ interface NoticeProps {
 }
 
 export function Notice({ tone = "danger", children, onDismiss }: NoticeProps) {
+  const { t } = useI18n();
   const Icon = tone === "ok" ? CheckCircle2 : AlertTriangle;
   return (
     <div
@@ -25,7 +27,7 @@ export function Notice({ tone = "danger", children, onDismiss }: NoticeProps) {
       <Icon size={15} className="mt-0.5 shrink-0" aria-hidden />
       <p className="flex-1">{children}</p>
       {onDismiss && (
-        <button type="button" onClick={onDismiss} className="text-muted hover:text-fg" aria-label="Dismiss">
+        <button type="button" onClick={onDismiss} className="text-muted hover:text-fg" aria-label={t.common.dismiss}>
           <X size={14} aria-hidden />
         </button>
       )}

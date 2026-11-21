@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Notice } from "../../components/Notice";
 import type { FavoritesState } from "../../hooks/useFavorites";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
-import { formatTime } from "../../lib/labels";
+import { useI18n } from "../../i18n/I18nProvider";
 import type { PortEntry } from "../../types/ports";
 import type { TerminationOutcome } from "../../types/process";
 import { DetailsPanel } from "../process/DetailsPanel";
@@ -21,13 +21,20 @@ import {
 import { PortsTable } from "./PortsTable";
 import { PortsToolbar } from "./PortsToolbar";
 
-export function PortsPage({ ports, favorites }: { ports: PortSnapshotState; favorites: FavoritesState }) {
+interface PortsPageProps {
+  ports: PortSnapshotState;
+  favorites: FavoritesState;
+}
+
+export function PortsPage({ ports, favorites }: PortsPageProps) {
+  const { t, formatNumber, formatTime, describeError } = useI18n();
   const { snapshot, error, loading, refresh } = ports;
   const [filters, setFilters] = useState<PortFilters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortOrder>({ key: "localPort", direction: "asc" });
   const [selected, setSelected] = useState<PortEntry | null>(null);
   const [endTarget, setEndTarget] = useState<EndProcessTarget | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+  // Stored as data so the message re-renders in a newly chosen language.
+  const [ended, setEnded] = useState<TerminationOutcome | null>(null);
 
   const entries = useMemo(() => snapshot?.entries ?? [], [snapshot]);
   const processNames = useMemo(() => distinctProcessNames(entries), [entries]);
@@ -36,15 +43,12 @@ export function PortsPage({ ports, favorites }: { ports: PortSnapshotState; favo
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, direction: s.key === key && s.direction === "asc" ? "desc" : "asc" }));
+  const toggleFavorite = (port: number) => void favorites.toggle(port);
 
   const handleEnded = (outcome: TerminationOutcome) => {
     setEndTarget(null);
     setSelected((s) => (s?.pid === outcome.pid ? null : s));
-    setResult(
-      outcome.exited
-        ? `Ended ${outcome.name} (PID ${outcome.pid}).`
-        : `Asked ${outcome.name} (PID ${outcome.pid}) to stop, but it was still running after 3 seconds.`,
-    );
+    setEnded(outcome);
     void refresh();
   };
 
@@ -59,28 +63,28 @@ export function PortsPage({ ports, favorites }: { ports: PortSnapshotState; favo
         refreshing={loading}
       />
 
-      {result && (
-        <Notice tone="ok" onDismiss={() => setResult(null)}>
-          {result}
+      {ended && (
+        <Notice tone="ok" onDismiss={() => setEnded(null)}>
+          {ended.exited ? t.ports.ended(ended.name, ended.pid) : t.ports.stillRunning(ended.name, ended.pid)}
         </Notice>
       )}
-      {error && <Notice>Couldn't read the port list: {error}</Notice>}
+      {error && <Notice>{t.ports.listError(describeError(error))}</Notice>}
       {favorites.error && (
-        <Notice onDismiss={favorites.clearError}>Couldn't update favorites: {favorites.error}</Notice>
+        <Notice onDismiss={favorites.clearError}>{t.favorites.updateError(describeError(favorites.error))}</Notice>
       )}
       {snapshot?.processLookupError && (
-        <Notice tone="warn">Ports were read, but process names are unavailable: {snapshot.processLookupError}</Notice>
+        <Notice tone="warn">{t.ports.processLookupWarning(describeError(snapshot.processLookupError))}</Notice>
       )}
 
       <div className="flex min-h-0 flex-1 gap-3">
         <div className="min-w-0 flex-1 overflow-auto rounded-lg border border-line bg-surface">
           {snapshot === null ? (
-            <p className="p-4 text-muted">{loading ? "Reading the connection table…" : "No port data yet."}</p>
+            <p className="p-4 text-muted">{loading ? t.ports.loading : t.ports.noData}</p>
           ) : visible.length === 0 ? (
             <p className="p-4 text-muted">
-              No sockets match these filters.{" "}
+              {t.ports.noMatches}{" "}
               <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="text-accent hover:underline">
-                Clear filters
+                {t.common.clearFilters}
               </button>
             </p>
           ) : (
@@ -92,7 +96,7 @@ export function PortsPage({ ports, favorites }: { ports: PortSnapshotState; favo
               onSelect={setSelected}
               onEndProcess={setEndTarget}
               favoritePorts={favorites.ports}
-              onToggleFavorite={(port) => void favorites.toggle(port)}
+              onToggleFavorite={toggleFavorite}
             />
           )}
         </div>
@@ -104,15 +108,14 @@ export function PortsPage({ ports, favorites }: { ports: PortSnapshotState; favo
             onClose={() => setSelected(null)}
             onEndProcess={setEndTarget}
             isFavorite={favorites.ports.has(selected.localPort)}
-            onToggleFavorite={(port) => void favorites.toggle(port)}
+            onToggleFavorite={toggleFavorite}
           />
         )}
       </div>
 
       {snapshot && (
         <p className="text-xs text-muted">
-          Showing {visible.length.toLocaleString()} of {entries.length.toLocaleString()} sockets, read at{" "}
-          {formatTime(snapshot.scannedAtMs)}. Select a row for process details.
+          {t.ports.footer(formatNumber(visible.length), formatNumber(entries.length), formatTime(snapshot.scannedAtMs))}
         </p>
       )}
 

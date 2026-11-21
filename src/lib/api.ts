@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppError } from "../types/error";
+import type { AppError, AppErrorKind } from "../types/error";
 import type { Favorite } from "../types/favorites";
 import type { HealthStatus } from "../types/health";
 import type { PortSnapshot } from "../types/ports";
 import type { ProcessDetails, TerminationOutcome } from "../types/process";
+import type { Locale, Settings } from "../types/settings";
 
 /**
  * The only place the frontend talks to Rust. Each wrapper maps one Tauri
@@ -19,22 +20,38 @@ export const api = {
   listFavorites: () => invoke<Favorite[]>("list_favorites"),
   addFavorite: (port: number) => invoke<Favorite[]>("add_favorite", { port }),
   removeFavorite: (port: number) => invoke<Favorite[]>("remove_favorite", { port }),
+  getSettings: () => invoke<Settings>("get_settings"),
+  setLanguage: (language: Locale) => invoke<Settings>("set_language", { language }),
 };
 
-function isAppError(value: unknown): value is AppError {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "kind" in value &&
-    "message" in value &&
-    typeof (value as AppError).message === "string"
-  );
-}
+const KNOWN_KINDS = new Set<AppErrorKind>([
+  "internal",
+  "network",
+  "unsupported",
+  "storage",
+  "invalidPid",
+  "invalidPort",
+  "invalidProcessName",
+  "processNameMismatch",
+  "processNotFound",
+  "permissionDenied",
+  "protectedProcess",
+]);
 
-/** Normalizes anything thrown by `invoke` into a readable message. */
-export function errorMessage(error: unknown): string {
-  if (isAppError(error)) return error.message;
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  return "Unknown error";
+/**
+ * Normalizes anything thrown by `invoke` into an `AppError`. Tauri itself can
+ * reject with plain strings (e.g. argument deserialization failures); those
+ * become `internal` errors carrying the original text.
+ */
+export function toAppError(error: unknown): AppError {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "kind" in error &&
+    KNOWN_KINDS.has((error as { kind: AppErrorKind }).kind)
+  ) {
+    return error as AppError;
+  }
+  if (error instanceof Error) return { kind: "internal", detail: error.message };
+  return { kind: "internal", detail: typeof error === "string" ? error : "unknown error" };
 }

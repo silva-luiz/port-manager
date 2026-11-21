@@ -1,3 +1,5 @@
+import type { AppError } from "./error";
+
 /** Mirrors `Protocol` in src-tauri/src/network/mod.rs. */
 export type Protocol = "tcp" | "tcp6";
 
@@ -42,5 +44,5 @@ export interface PortSnapshot {
   entries: PortEntry[];
   summary: PortSummary;
   scannedAtMs: number;
-  processLookupError: string | null;
+  processLookupError: AppError | null;
 }

@@ -22,8 +22,8 @@ pub struct ProcessDetails {
     pub pid: u32,
     pub name: String,
     pub executable_path: Option<String>,
-    /// Why `executable_path` is missing, phrased for the user.
-    pub path_unavailable_reason: Option<String>,
+    /// Why `executable_path` is missing (usually `permissionDenied`).
+    pub path_error: Option<AppError>,
 }
 
 /// Maps every running PID to its executable name (e.g. `hugo.exe`).
@@ -41,32 +41,30 @@ pub fn details(pid: u32) -> Result<ProcessDetails, AppError> {
     validate_pid(pid)?;
     let name = process_name(pid)?;
 
-    let (executable_path, path_unavailable_reason) = match imp::executable_path(pid) {
+    let (executable_path, path_error) = match imp::executable_path(pid) {
         Ok(path) => (Some(path), None),
-        Err(e @ AppError::ProcessNotFound(_)) => return Err(e),
-        Err(e) => (None, Some(e.message().to_owned())),
+        Err(e @ AppError::ProcessNotFound { .. }) => return Err(e),
+        Err(e) => (None, Some(e)),
     };
 
     Ok(ProcessDetails {
         pid,
         name,
         executable_path,
-        path_unavailable_reason,
+        path_error,
     })
 }
 
 /// PID 0 is the idle pseudo-process and never a valid target.
 pub fn validate_pid(pid: u32) -> Result<(), AppError> {
     if pid == 0 {
-        return Err(AppError::InvalidInput("PID 0 is not a real process".into()));
+        return Err(AppError::InvalidPid { pid });
     }
     Ok(())
 }
 
 pub(crate) fn not_found(pid: u32) -> AppError {
-    AppError::ProcessNotFound(format!(
-        "No running process has PID {pid}. It may have exited; refresh the list."
-    ))
+    AppError::ProcessNotFound { pid }
 }
 
 #[cfg(test)]
@@ -75,7 +73,7 @@ mod tests {
 
     #[test]
     fn pid_zero_is_rejected() {
-        assert!(matches!(details(0), Err(AppError::InvalidInput(_))));
+        assert!(matches!(details(0), Err(AppError::InvalidPid { pid: 0 })));
     }
 
     #[cfg(windows)]
@@ -84,7 +82,7 @@ mod tests {
         let d = details(std::process::id()).unwrap();
         let expected = std::env::current_exe().unwrap();
         assert_eq!(d.executable_path.as_deref(), expected.to_str());
-        assert!(d.path_unavailable_reason.is_none());
+        assert!(d.path_error.is_none());
     }
 
     #[cfg(windows)]
@@ -93,7 +91,7 @@ mod tests {
         // PIDs are multiples of 4 on Windows; this one is never allocated in practice.
         assert!(matches!(
             details(0xFFFF_FFF0),
-            Err(AppError::ProcessNotFound(_))
+            Err(AppError::ProcessNotFound { .. })
         ));
     }
 }

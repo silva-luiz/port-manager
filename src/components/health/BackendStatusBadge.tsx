@@ -1,10 +1,5 @@
 import type { HealthState } from "../../hooks/useHealthCheck";
-
-const LABELS: Record<HealthState["phase"], string> = {
-  checking: "Connecting to backend",
-  online: "Backend connected",
-  offline: "Backend unreachable",
-};
+import { useI18n } from "../../i18n/I18nProvider";
 
 const DOT: Record<HealthState["phase"], string> = {
   checking: "bg-warn animate-pulse",
@@ -13,10 +8,11 @@ const DOT: Record<HealthState["phase"], string> = {
 };
 
 export function BackendStatusBadge({ state }: { state: HealthState }) {
+  const { t } = useI18n();
   return (
     <span role="status" className="flex items-center gap-2 text-xs text-muted">
       <span className={`size-2 rounded-full ${DOT[state.phase]}`} aria-hidden />
-      {LABELS[state.phase]}
+      {t.backend[state.phase]}
     </span>
   );
 }

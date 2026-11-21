@@ -5,3 +5,4 @@ pub mod favorites;
 pub mod health;
 pub mod ports;
 pub mod process;
+pub mod settings;

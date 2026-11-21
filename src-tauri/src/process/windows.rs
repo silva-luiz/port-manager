@@ -28,8 +28,8 @@ pub fn process_names() -> Result<HashMap<u32, String>, AppError> {
     // SAFETY: plain FFI call; the result is checked below.
     let raw = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
     if raw == INVALID_HANDLE_VALUE {
-        return Err(AppError::Internal(format!(
-            "Could not list running processes: {}",
+        return Err(AppError::internal(format!(
+            "could not list running processes: {}",
             std::io::Error::last_os_error()
         )));
     }
@@ -79,8 +79,8 @@ pub fn executable_path(pid: u32) -> Result<String, AppError> {
             buf.resize(buf.len() * 4, 0);
             continue;
         }
-        return Err(AppError::Internal(format!(
-            "Windows could not report the executable path: {err}"
+        return Err(AppError::internal(format!(
+            "could not read the executable path: {err}"
         )));
     }
 }
@@ -93,11 +93,8 @@ pub(crate) fn open_process(pid: u32, access: u32) -> Result<OwnedHandle, AppErro
         let err = std::io::Error::last_os_error();
         return Err(match err.raw_os_error().map(|c| c as u32) {
             Some(ERROR_INVALID_PARAMETER) => not_found(pid),
-            Some(ERROR_ACCESS_DENIED) => AppError::PermissionDenied(format!(
-                "Windows denied access to PID {pid}. It probably belongs to the system or \
-                 another user, and Port Manager runs without administrator rights."
-            )),
-            _ => AppError::Internal(format!("Could not open PID {pid}: {err}")),
+            Some(ERROR_ACCESS_DENIED) => AppError::PermissionDenied { pid, name: None },
+            _ => AppError::internal(format!("could not open PID {pid}: {err}")),
         });
     }
     // SAFETY: `raw` is a valid process handle we own.

@@ -1,7 +1,8 @@
 import { Power, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { FavoriteButton } from "../../components/FavoriteButton";
-import { useProcessDetails } from "../../hooks/useProcessDetails";
+import { useProcessDetails, type ProcessDetailsState } from "../../hooks/useProcessDetails";
+import { useI18n } from "../../i18n/I18nProvider";
 import { PROTOCOL_LABELS } from "../../lib/labels";
 import type { PortEntry } from "../../types/ports";
 import { StateBadge } from "../ports/StateBadge";
@@ -16,6 +17,7 @@ interface DetailsPanelProps {
 }
 
 export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggleFavorite }: DetailsPanelProps) {
+  const { t } = useI18n();
   const details = useProcessDetails(entry.pid);
   const name = details.phase === "loaded" ? details.details.name : entry.processName;
 
@@ -26,38 +28,42 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <h2 id="details-title" className="truncate font-medium" title={name ?? undefined}>
-          {name ?? "Unknown process"}
+          {name ?? t.details.unknownProcess}
         </h2>
-        <button type="button" onClick={onClose} className="text-muted hover:text-fg" aria-label="Close details">
+        <button type="button" onClick={onClose} className="text-muted hover:text-fg" aria-label={t.details.close}>
           <X size={15} aria-hidden />
         </button>
       </div>
 
-      <Section title="Process">
-        <Field label="Name">{name ?? <Missing>No owning process</Missing>}</Field>
-        <Field label="PID" mono>
-          {entry.pid ?? <Missing>None</Missing>}
+      <Section title={t.details.process}>
+        <Field label={t.details.name}>{name ?? <Missing>{t.details.noOwner}</Missing>}</Field>
+        <Field label={t.details.pid} mono>
+          {entry.pid ?? <Missing>{t.common.none}</Missing>}
         </Field>
-        <Field label="Executable">
+        <Field label={t.details.executable}>
           <ExecutablePath entry={entry} state={details} />
         </Field>
       </Section>
 
-      <Section title="Connection">
-        <Field label="Port" mono>
+      <Section title={t.details.connection}>
+        <Field label={t.details.port} mono>
           <span className="flex items-center gap-1">
             {entry.localPort}
             <FavoriteButton port={entry.localPort} active={isFavorite} onToggle={onToggleFavorite} />
           </span>
         </Field>
-        <Field label="Protocol">{PROTOCOL_LABELS[entry.protocol]}</Field>
-        <Field label="Local" mono>
+        <Field label={t.details.protocol}>{PROTOCOL_LABELS[entry.protocol]}</Field>
+        <Field label={t.details.local} mono>
           {entry.localAddress}
         </Field>
-        <Field label="Remote" mono>
-          {entry.remoteAddress !== null ? `${entry.remoteAddress}:${entry.remotePort}` : <Missing>None</Missing>}
+        <Field label={t.details.remote} mono>
+          {entry.remoteAddress !== null ? (
+            `${entry.remoteAddress}:${entry.remotePort}`
+          ) : (
+            <Missing>{t.common.none}</Missing>
+          )}
         </Field>
-        <Field label="State">
+        <Field label={t.details.state}>
           <StateBadge state={entry.state} />
         </Field>
       </Section>
@@ -67,31 +73,35 @@ export function DetailsPanel({ entry, onClose, onEndProcess, isFavorite, onToggl
           type="button"
           disabled={entry.pid === null || name === null}
           onClick={() => entry.pid !== null && name && onEndProcess({ pid: entry.pid, name })}
-          title={entry.pid === null ? "This socket has no owning process" : undefined}
+          title={entry.pid === null ? t.details.noOwnerTitle : undefined}
           className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-danger/40 text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Power size={14} aria-hidden />
-          End process…
+          {t.details.endProcess}
         </button>
       </div>
     </aside>
   );
 }
 
-function ExecutablePath({ entry, state }: { entry: PortEntry; state: ReturnType<typeof useProcessDetails> }) {
-  if (entry.pid === null) return <Missing>None</Missing>;
+function ExecutablePath({ entry, state }: { entry: PortEntry; state: ProcessDetailsState }) {
+  const { t, describeError } = useI18n();
+  if (entry.pid === null) return <Missing>{t.common.none}</Missing>;
   switch (state.phase) {
     case "none":
     case "loading":
-      return <span className="text-muted">Loading…</span>;
+      return <span className="text-muted">{t.details.loading}</span>;
     case "error":
-      return <span className="text-warn">{state.error}</span>;
-    case "loaded":
-      return state.details.executablePath ? (
-        <span className="font-mono text-[12px] break-all select-text">{state.details.executablePath}</span>
-      ) : (
-        <span className="text-muted">Unavailable. {state.details.pathUnavailableReason}</span>
+      return <span className="text-warn">{describeError(state.error)}</span>;
+    case "loaded": {
+      const { executablePath, pathError } = state.details;
+      if (executablePath) {
+        return <span className="font-mono text-[12px] break-all select-text">{executablePath}</span>;
+      }
+      return (
+        <span className="text-muted">{t.details.pathUnavailable(pathError ? describeError(pathError) : "")}</span>
       );
+    }
   }
 }
 

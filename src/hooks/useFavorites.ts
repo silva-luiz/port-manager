@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, errorMessage } from "../lib/api";
+import { api, toAppError } from "../lib/api";
+import type { AppError } from "../types/error";
 import type { Favorite } from "../types/favorites";
 
 /** Favorite ports from SQLite. Every mutation returns the full list from the backend. */
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
 
   const run = useCallback(async (request: () => Promise<Favorite[]>) => {
     try {
@@ -13,7 +14,7 @@ export function useFavorites() {
       setError(null);
       return true;
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toAppError(e));
       return false;
     }
   }, []);

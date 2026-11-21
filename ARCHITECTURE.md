@@ -19,10 +19,12 @@ interaction, and a React + TypeScript frontend rendered in the system WebView.
 port-manager/
 ├── src/                              # Frontend
 │   ├── main.tsx, App.tsx             # Entry point; shell + view switching
+│   ├── i18n/                         # en.ts (defines Messages), ptBR.ts,
+│   │                                 # I18nProvider, describeError
 │   ├── index.css                     # Tailwind import + design tokens (@theme)
 │   ├── lib/
 │   │   ├── api.ts                    # Only module that calls `invoke`
-│   │   └── labels.ts                 # Display labels for states/protocols
+│   │   └── labels.ts                 # Untranslated protocol names
 │   ├── types/                        # TS mirrors of Rust IPC structs
 │   ├── hooks/
 │   │   ├── useHealthCheck.ts
@@ -36,7 +38,8 @@ port-manager/
 │       ├── favorites/                # FavoritesPage, favoriteUsage.ts (pure)
 │       ├── ports/                    # PortsPage, PortsToolbar, PortsTable, StateBadge,
 │       │                             # portQuery.ts (pure filter/sort logic)
-│       └── process/                  # DetailsPanel, EndProcessDialog
+│       ├── process/                  # DetailsPanel, EndProcessDialog
+│       └── settings/                 # SettingsPage (language)
 └── src-tauri/                        # Backend
     ├── tauri.conf.json               # Window, CSP, bundle config
     ├── capabilities/default.json     # Permissions granted to the main window
@@ -57,9 +60,11 @@ port-manager/
         ├── ports.rs                  # Joins connections + names; computes summary
         ├── storage.rs                # SQLite connection + migrations
         ├── favorites.rs              # Favorite ports CRUD
+        ├── settings.rs               # Typed settings (language) over a key/value table
         └── commands/
             ├── health.rs             # health_check
             ├── favorites.rs          # list/add/remove_favorite
+            ├── settings.rs           # get_settings, set_language
             ├── ports.rs              # list_ports
             └── process.rs            # process_details, terminate_process
 ```
@@ -87,10 +92,12 @@ port-manager/
   `invoke` directly.
 - Rust structs use `#[serde(rename_all = "camelCase")]`; each has a hand-written TypeScript
   mirror in `src/types/` with a comment pointing back to the Rust source.
-- Commands return `Result<T, AppError>`. `AppError` serializes as
-  `{ "kind": "...", "message": "..." }` so the UI can branch on `kind` (`permissionDenied`,
-  `processNotFound`, `protectedProcess`, ...) without parsing strings. Messages are written
-  to be shown to the user as-is. `errorMessage()` in `api.ts` normalizes any
+- Commands return `Result<T, AppError>`. `AppError` is structured data, not text:
+  `{ "kind": "processNameMismatch", "pid": 42, "expected": "node.exe", "actual": "hugo.exe" }`.
+  The frontend normalizes anything thrown with `toAppError()` and renders it with
+  `describeError()` in the current language. `detail` fields (OS/SQLite error text) are
+  shown verbatim inside the translated sentence. Rust's `Display` for `AppError` is English
+  and only used for logs and tests. `errorMessage()` in `api.ts` normalizes any
   thrown value for display.
 
 ## Security posture
@@ -126,11 +133,28 @@ port-manager/
   hook and shared as managed state (`storage::Database`, one connection behind a mutex).
 - Migrations are the `MIGRATIONS` list in `storage.rs`, tracked with `PRAGMA user_version`.
   Each runs in its own transaction. Append new migrations; never edit existing ones.
+- `settings` table: `key`/`value` text pairs behind the typed API in `settings.rs`
+  (currently only `language`).
 - `favorites` table: `port` (primary key, CHECK 1–65535) and `created_at_ms`. Add/remove are
   idempotent and return the full updated list so the UI has a single source of truth.
 - The Favorites view joins favorites with the current port snapshot on the frontend
   (`favoriteUsage.ts`); "in use" uses the same rule as the dashboard (any socket that is not
   TIME_WAIT/CLOSED).
+
+## Internationalization
+
+- Supported UI languages: English (`en`, default) and Brazilian Portuguese (`pt-BR`).
+- `src/i18n/en.ts` defines the `Messages` shape; `ptBR.ts` is typed as `Messages`, so a
+  missing or mistyped key fails the build. Messages with variables are functions
+  (`ended: (name, pid) => ...`) so word order can differ per language.
+- `I18nProvider` loads the saved language before the first render (no flash of the wrong
+  language), sets `<html lang>`, and exposes `t`, `formatTime`, `formatNumber` (via
+  `Intl` with the active locale) and `describeError`.
+- State that ends up as user-visible text (errors, the "process ended" notice) is stored as
+  data and formatted at render time, so switching language updates it immediately.
+- The choice is persisted by `set_language` in the `settings` table. The backend only
+  accepts `"en"` or `"pt-BR"` (serde enum); unknown stored values fall back to English.
+- Not translated: protocol names (TCP/TCPv6), process names, addresses and raw OS details.
 
 ## Platform support
 

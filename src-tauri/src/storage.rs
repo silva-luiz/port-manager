@@ -9,10 +9,16 @@ use crate::error::AppError;
 
 /// Schema migrations, applied in order. `PRAGMA user_version` records how many
 /// have run. Append new entries; never edit or reorder existing ones.
-const MIGRATIONS: &[&str] = &["CREATE TABLE favorites (
+const MIGRATIONS: &[&str] = &[
+    "CREATE TABLE favorites (
         port          INTEGER PRIMARY KEY CHECK (port BETWEEN 1 AND 65535),
         created_at_ms INTEGER NOT NULL
-    ) STRICT;"];
+    ) STRICT;",
+    "CREATE TABLE settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    ) STRICT;",
+];
 
 pub struct Database {
     conn: Mutex<Connection>,
@@ -20,12 +26,8 @@ pub struct Database {
 
 impl Database {
     pub fn open(path: &Path) -> Result<Self, AppError> {
-        let conn = Connection::open(path).map_err(|e| {
-            AppError::Storage(format!(
-                "Could not open the database at {}: {e}",
-                path.display()
-            ))
-        })?;
+        let conn = Connection::open(path)
+            .map_err(|e| AppError::storage(format!("could not open {}: {e}", path.display())))?;
         Self::init(conn)
     }
 
@@ -47,9 +49,7 @@ impl Database {
         f: impl FnOnce(&Connection) -> rusqlite::Result<T>,
     ) -> Result<T, AppError> {
         let conn = self.conn.lock().map_err(|_| {
-            AppError::Storage(
-                "The database is unavailable after an earlier failure; restart the app.".into(),
-            )
+            AppError::storage("the database lock was poisoned by an earlier failure")
         })?;
         f(&conn).map_err(storage_error)
     }
@@ -67,7 +67,7 @@ fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
 }
 
 fn storage_error(e: rusqlite::Error) -> AppError {
-    AppError::Storage(format!("Database error: {e}"))
+    AppError::storage(e.to_string())
 }
 
 #[cfg(test)]

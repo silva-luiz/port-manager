@@ -3,6 +3,7 @@ import { HealthPanel } from "../../components/health/HealthPanel";
 import { RefreshButton } from "../../components/RefreshButton";
 import type { HealthState } from "../../hooks/useHealthCheck";
 import type { PortSnapshotState } from "../../hooks/usePortSnapshot";
+import { useI18n } from "../../i18n/I18nProvider";
 import { SummaryStrip } from "./SummaryStrip";
 
 interface DashboardPageProps {
@@ -12,13 +13,14 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({ ports, health, onCheckHealth }: DashboardPageProps) {
+  const { t, describeError } = useI18n();
   return (
     <div className="flex max-w-5xl flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-muted">TCP sockets on this machine, read from the Windows connection table.</p>
+        <p className="text-muted">{t.dashboard.intro}</p>
         <RefreshButton onClick={() => void ports.refresh()} busy={ports.loading} />
       </div>
-      {ports.error && <Notice>Couldn't read the port list: {ports.error}</Notice>}
+      {ports.error && <Notice>{t.ports.listError(describeError(ports.error))}</Notice>}
       <SummaryStrip snapshot={ports.snapshot} />
       <HealthPanel state={health} onCheck={onCheckHealth} />
     </div>

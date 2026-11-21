@@ -7,5 +7,5 @@ pub fn now_ms() -> Result<u64, AppError> {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
-        .map_err(|e| AppError::Internal(format!("system clock is before Unix epoch: {e}")))
+        .map_err(|e| AppError::internal(format!("system clock is before Unix epoch: {e}")))
 }

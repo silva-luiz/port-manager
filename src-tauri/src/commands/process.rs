@@ -22,5 +22,5 @@ async fn run_blocking<T: Send + 'static>(
 ) -> Result<T, AppError> {
     tauri::async_runtime::spawn_blocking(f)
         .await
-        .map_err(|e| AppError::Internal(format!("background task failed: {e}")))?
+        .map_err(|e| AppError::internal(format!("background task failed: {e}")))?
 }

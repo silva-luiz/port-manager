@@ -51,9 +51,7 @@ pub fn remove(db: &Database, port: u16) -> Result<Vec<Favorite>, AppError> {
 /// Port 0 means "any port" to the OS and can't be a meaningful favorite.
 fn validate_port(port: u16) -> Result<(), AppError> {
     if port == 0 {
-        return Err(AppError::InvalidInput(
-            "Port must be between 1 and 65535.".into(),
-        ));
+        return Err(AppError::InvalidPort { port });
     }
     Ok(())
 }
@@ -90,8 +88,14 @@ mod tests {
     #[test]
     fn port_zero_is_rejected() {
         let db = Database::open_in_memory().unwrap();
-        assert!(matches!(add(&db, 0), Err(AppError::InvalidInput(_))));
-        assert!(matches!(remove(&db, 0), Err(AppError::InvalidInput(_))));
+        assert!(matches!(
+            add(&db, 0),
+            Err(AppError::InvalidPort { port: 0 })
+        ));
+        assert!(matches!(
+            remove(&db, 0),
+            Err(AppError::InvalidPort { port: 0 })
+        ));
         assert!(list(&db).unwrap().is_empty());
     }
 }

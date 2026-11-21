@@ -6,5 +6,5 @@ use crate::ports::{self, PortSnapshot};
 pub async fn list_ports() -> Result<PortSnapshot, AppError> {
     tauri::async_runtime::spawn_blocking(ports::snapshot)
         .await
-        .map_err(|e| AppError::Internal(format!("port scan task failed: {e}")))?
+        .map_err(|e| AppError::internal(format!("port scan task failed: {e}")))?
 }

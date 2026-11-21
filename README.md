@@ -19,10 +19,12 @@ Early development. What works today:
 - Favorite ports, saved locally in SQLite: star a port from the table or details panel, or
   add one by number on the Favorites page, which shows whether each one is in use and by
   which process.
+- English and Brazilian Portuguese interface: choose the language under **Settings** (gear
+  icon at the bottom of the left rail). The choice is remembered.
 - Backend health check.
 
 Data is stored in `%APPDATA%\com.portmanager.app\port-manager.db`. Deleting that file resets
-the favorites.
+the favorites and settings.
 
 ## Prerequisites (Windows)
 

@@ -54,9 +54,9 @@ pub fn tcp_connections() -> Result<Vec<TcpConnection>, AppError> {
     }
     #[cfg(not(windows))]
     {
-        Err(AppError::Unsupported(
-            "port discovery is only implemented for Windows".into(),
-        ))
+        Err(AppError::Unsupported {
+            detail: "port discovery is only implemented for Windows".into(),
+        })
     }
 }
 

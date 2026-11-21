@@ -33,6 +33,15 @@ Append a new SQL string to `MIGRATIONS` in `src-tauri/src/storage.rs`. Never edi
 existing entries: installed copies have already applied them. Use `Database::open_in_memory()`
 in tests.
 
+## Adding or changing UI text
+
+1. Add the key to `src/i18n/en.ts`. Use a function for anything with variables.
+2. Add the same key to `src/i18n/ptBR.ts`; TypeScript fails the build until you do.
+3. Read it with `const { t } = useI18n()`. Never hard-code user-visible strings in components.
+4. For a new backend error, add a variant to `AppError` (Rust) carrying data, mirror it in
+   `src/types/error.ts` and `KNOWN_KINDS` in `src/lib/api.ts`, and add a case to
+   `describeError` plus a message in both dictionaries.
+
 ## Conventions
 
 ### Rust
