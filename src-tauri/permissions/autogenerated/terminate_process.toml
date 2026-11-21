@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-terminate-process"
+description = "Enables the terminate_process command without any pre-configured scope."
+commands.allow = ["terminate_process"]
+
+[[permission]]
+identifier = "deny-terminate-process"
+description = "Denies the terminate_process command without any pre-configured scope."
+commands.deny = ["terminate_process"]

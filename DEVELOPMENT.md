@@ -38,7 +38,9 @@ Tauri crate embeds `dist/` at compile time.
 1. Implement the logic in the appropriate domain module (not in `commands/`).
 2. Add a thin `#[tauri::command]` in `src-tauri/src/commands/<area>.rs` that validates input
    and returns `Result<T, AppError>`.
-3. Register it in `tauri::generate_handler![...]` in `src-tauri/src/lib.rs`.
+3. Register it in `tauri::generate_handler![...]` in `src-tauri/src/lib.rs`, add its name to
+   `COMMANDS` in `src-tauri/build.rs`, and grant `allow-<name-with-dashes>` in
+   `src-tauri/capabilities/default.json`. Until it is granted, calls are denied.
 4. Add the TypeScript mirror type under `src/types/` and a wrapper in `src/lib/api.ts`.
 5. Add Rust unit tests for the logic and for the serialized shape when it matters.
 

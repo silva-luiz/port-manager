@@ -110,9 +110,12 @@ port-manager/
 
 ## Security posture
 
-- Granted permissions: `core:default` plus three notification commands
-  (`is-permission-granted`, `request-permission`, `notify`), not the plugin's broader default
-  set. No shell, filesystem or opener plugins.
+- Granted permissions: `core:default`, three notification commands (`is-permission-granted`,
+  `request-permission`, `notify`) rather than the plugin's broader default set, and each app
+  command individually (`allow-list-ports`, …). App commands are declared in `build.rs`
+  (`AppManifest::commands`), so a command that is not granted in
+  `capabilities/default.json` is denied, and an unknown permission name fails the build.
+  No shell, filesystem or opener plugins.
 - No command accepts or executes shell input from the frontend.
 - A strict Content Security Policy is set in `tauri.conf.json`: scripts and styles only from the
   app itself, IPC connections only, no inline styles. `devCsp` adds `'unsafe-inline'` for

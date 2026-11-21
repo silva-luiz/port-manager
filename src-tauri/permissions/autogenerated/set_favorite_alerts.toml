@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-favorite-alerts"
+description = "Enables the set_favorite_alerts command without any pre-configured scope."
+commands.allow = ["set_favorite_alerts"]
+
+[[permission]]
+identifier = "deny-set-favorite-alerts"
+description = "Denies the set_favorite_alerts command without any pre-configured scope."
+commands.deny = ["set_favorite_alerts"]
