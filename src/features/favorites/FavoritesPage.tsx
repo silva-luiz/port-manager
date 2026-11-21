@@ -107,7 +107,7 @@ function OwnerList({ owners }: { owners: PortOwner[] }) {
     .map((o) => {
       const name = o.processName ?? t.favorites.unknownProcess;
       const pid = o.pid !== null ? ` (PID ${o.pid})` : "";
-      const states = o.states.map((s) => t.states[s].toLowerCase()).join(", ");
+      const states = o.states.map((s) => t.states[s]).join(", ");
       return `${name}${pid}: ${states}`;
     })
     .join("; ");
