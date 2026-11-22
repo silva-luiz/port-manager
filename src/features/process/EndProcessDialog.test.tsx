@@ -24,6 +24,7 @@ function details(descendants: ProcessDetails["descendants"]): ProcessDetails {
     pathError: null,
     commandLine: null,
     parent: null,
+    mainProcess: null,
     descendants,
   };
 }

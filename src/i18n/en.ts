@@ -120,6 +120,8 @@ export const en = {
   details: {
     unknownProcess: "Unknown process",
     close: "Close details",
+    resize: "Resize details panel",
+    resizeTitle: "Drag to resize. Double-click to reset",
     process: "Process",
     connection: "Connection",
     name: "Name",
@@ -131,6 +133,9 @@ export const en = {
     children: "Child processes",
     endParent: "End…",
     endParentTitle: (name: string) => `End ${name}, the process that started this one`,
+    mainProcess: "Main process",
+    isMainProcess: "This process",
+    endMainTitle: (name: string) => `End ${name}, the main process of this application`,
     port: "Port",
     protocol: "Protocol",
     local: "Local",

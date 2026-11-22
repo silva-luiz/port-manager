@@ -10,6 +10,8 @@ export interface ProcessDetails {
   commandLine: string | null;
   /** The process that started this one, if still running. */
   parent: ProcessRef | null;
+  /** Main process of the application when this is one of its helpers; null if this is the main one. */
+  mainProcess: ProcessRef | null;
   /** Processes started by this one, directly or indirectly, parents first. */
   descendants: ProcessRef[];
 }

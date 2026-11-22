@@ -53,6 +53,9 @@ pub struct ProcessDetails {
     pub command_line: Option<String>,
     /// The process that started this one, if it is still running.
     pub parent: Option<ProcessRef>,
+    /// Main process of the application, when this is one of its helper
+    /// processes (e.g. the first `chrome.exe` of a tree of `chrome.exe`).
+    pub main_process: Option<ProcessRef>,
     /// Processes started by this one, directly or indirectly, parents first.
     pub descendants: Vec<ProcessRef>,
 }
@@ -113,6 +116,7 @@ pub fn details(pid: u32) -> Result<ProcessDetails, AppError> {
             .parent_pid
             .filter(|&parent| started_before(parent, pid, creation_time))
             .and_then(to_ref),
+        main_process: main_process(pid, &table, creation_time).and_then(to_ref),
         descendants: descendants(pid, &table, creation_time)
             .into_iter()
             .filter_map(to_ref)
@@ -161,6 +165,32 @@ pub fn descendants(
         }
     }
     order
+}
+
+/// The application's main process for `pid`: the oldest ancestor reached by
+/// following parents that have the same executable name. `None` when `pid`
+/// itself is the main process (its parent is a different program, or gone).
+///
+/// Parent links are only followed when the parent is older than the child,
+/// as in `descendants`, so a reused PID never counts.
+pub fn main_process(
+    pid: u32,
+    table: &HashMap<u32, ProcessEntry>,
+    created: impl Fn(u32) -> Option<u64>,
+) -> Option<u32> {
+    let name = &table.get(&pid)?.name;
+    let mut current = pid;
+    let mut visited = HashSet::from([pid]);
+    while let Some(parent) = table[&current].parent_pid {
+        let same_app = table
+            .get(&parent)
+            .is_some_and(|p| p.name.eq_ignore_ascii_case(name));
+        if !same_app || !visited.insert(parent) || !started_before(parent, current, &created) {
+            break;
+        }
+        current = parent;
+    }
+    (current != pid).then_some(current)
 }
 
 fn started_before(parent: u32, child: u32, created: impl Fn(u32) -> Option<u64>) -> bool {
@@ -231,6 +261,61 @@ mod tests {
         let t = table(&[(1, Some(2)), (2, Some(1)), (3, Some(3))]);
         let d = descendants(1, &t, |_| Some(0));
         assert_eq!(d, [2]);
+    }
+
+    fn named_table(rows: &[(u32, &str, Option<u32>)]) -> HashMap<u32, ProcessEntry> {
+        rows.iter()
+            .map(|&(pid, name, parent_pid)| {
+                (
+                    pid,
+                    ProcessEntry {
+                        name: name.to_string(),
+                        parent_pid,
+                    },
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn main_process_is_the_oldest_ancestor_with_the_same_name() {
+        // explorer(1) -> chrome(2) -> chrome(3) -> chrome(4)
+        let t = named_table(&[
+            (1, "explorer.exe", None),
+            (2, "chrome.exe", Some(1)),
+            (3, "Chrome.exe", Some(2)),
+            (4, "chrome.exe", Some(3)),
+        ]);
+        let created = created_in_order(&[1, 2, 3, 4]);
+        assert_eq!(main_process(4, &t, &created), Some(2));
+        assert_eq!(main_process(3, &t, &created), Some(2));
+        assert_eq!(main_process(2, &t, &created), None, "2 is the main process");
+        assert_eq!(main_process(1, &t, &created), None);
+        assert_eq!(main_process(99, &t, &created), None);
+    }
+
+    #[test]
+    fn main_process_stops_at_a_different_program() {
+        // node(1) -> npm(2) -> node(3): 3 was started by npm, so it is its own main.
+        let t = named_table(&[(1, "node", None), (2, "npm", Some(1)), (3, "node", Some(2))]);
+        assert_eq!(main_process(3, &t, created_in_order(&[1, 2, 3])), None);
+    }
+
+    #[test]
+    fn main_process_ignores_reused_parent_pids_and_cycles() {
+        // 3 claims parent 2, but 2 was created after 3: PID 2 was reused.
+        let t = named_table(&[(2, "app", None), (3, "app", Some(2))]);
+        assert_eq!(main_process(3, &t, created_in_order(&[3, 2])), None);
+        // Unreadable creation time: never guess.
+        assert_eq!(main_process(3, &t, created_in_order(&[2])), None);
+
+        let t = named_table(&[
+            (1, "app", Some(2)),
+            (2, "app", Some(1)),
+            (3, "app", Some(3)),
+        ]);
+        assert_eq!(main_process(1, &t, |_| Some(0)), Some(2));
+        assert_eq!(main_process(3, &t, |_| Some(0)), None);
     }
 
     #[test]

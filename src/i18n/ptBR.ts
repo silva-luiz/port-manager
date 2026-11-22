@@ -124,6 +124,8 @@ export const ptBR: Messages = {
   details: {
     unknownProcess: "Processo desconhecido",
     close: "Fechar detalhes",
+    resize: "Redimensionar painel de detalhes",
+    resizeTitle: "Arraste para redimensionar. Clique duas vezes para restaurar",
     process: "Processo",
     connection: "Conexão",
     name: "Nome",
@@ -135,6 +137,9 @@ export const ptBR: Messages = {
     children: "Processos filhos",
     endParent: "Encerrar…",
     endParentTitle: (name) => `Encerrar ${name}, o processo que iniciou este`,
+    mainProcess: "Processo principal",
+    isMainProcess: "Este processo",
+    endMainTitle: (name) => `Encerrar ${name}, o processo principal deste aplicativo`,
     port: "Porta",
     protocol: "Protocolo",
     local: "Local",

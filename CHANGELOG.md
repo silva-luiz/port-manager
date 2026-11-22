@@ -11,6 +11,10 @@ All notable changes to Port Manager. Versions follow [Semantic Versioning](https
 - Brazilian Portuguese (pt-BR) interface, chosen under Settings.
 - Command line of each process in the ports table (arguments next to the name, searchable)
   and in the details panel, plus the parent process and child processes.
+- "Main process" in the details panel: for helper processes of a multi-process app (e.g.
+  `chrome.exe`, `Code.exe`), shows the app's main process and lets you end it.
+- Resizable details panel: drag its left edge (or use the arrow keys); the width is
+  remembered and a double-click restores the default.
 - Optionally end a process together with its child processes.
 - Copy buttons for PID, port, addresses, executable path and command line.
 - Windows notifications when a favorite port becomes busy or free (opt-in, works while
